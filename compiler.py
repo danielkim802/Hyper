@@ -111,6 +111,25 @@ class Lexer(object):
 
 		self.syntax_error("unexpected token %s" % self.char)
 
+class AST(object):
+	pass
+
+class AST_BinOp(AST):
+	def __init__(self, left, op, right):
+		self.left = left
+		self.op = self.token = op
+		self.right = right
+
+class AST_UnaryOp(AST):
+	def __init__(self, op, right):
+		self.op = self.token = op
+		self.right = right
+
+class AST_Int(AST):
+	def __init__(self, token):
+		self.value = token.value
+		self.token = token
+
 class Parser(object):
 	def __init__(self, src):
 		self.lexer = Lexer(src)
@@ -131,28 +150,29 @@ class Parser(object):
 	#        | [SPACE] LPAREN expr RPAREN [SPACE]
 	#        | [SPACE] ( ADD | SUB )* factor [SPACE]
 	def factor(self):
-		while self.token.type == SPACE:
+		if self.token.type == SPACE:
 			self.eat(SPACE)
 
 		if self.token.type in [ADD, SUB]:
-			unary = 1
+			curr = res = AST_UnaryOp(None, None)
 			while self.token.type in [ADD, SUB]:
+				curr.right = AST_UnaryOp(self.token, None)
+				curr = curr.right
 				if self.token.type == ADD:
-					unary *= +1
 					self.eat(ADD)
 				if self.token.type == SUB:
-					unary *= -1
 					self.eat(SUB)
-			res = unary * self.factor()
+			curr.right = self.factor()
+			res = res.right
 		elif self.token.type == INT:
-			res = self.token.value
+			res = AST_Int(self.token)
 			self.eat(INT)
 		else:
 			self.eat(LPAREN)
 			res = self.expr()
 			self.eat(RPAREN)
 
-		while self.token.type == SPACE:
+		if self.token.type == SPACE:
 			self.eat(SPACE)
 		return res
 
@@ -160,40 +180,22 @@ class Parser(object):
 	def term(self):
 		res = self.factor()
 		while self.token.type in [MUL, DIV]:
+			res = AST_BinOp(res, self.token, None)
 			if self.token.type == MUL:
 				self.eat(MUL)
-				res *= self.factor()
 			if self.token.type == DIV:
 				self.eat(DIV)
-				res /= self.factor()
+			res.right = self.factor()
 		return res
 
 	# expr : term (( ADD | SUB ) term )*
 	def expr(self):
 		res = self.term()
 		while self.token.type in [ADD, SUB]:
+			res = AST_BinOp(res, self.token, None)
 			if self.token.type == ADD:
 				self.eat(ADD)
-				res += self.term()
 			if self.token.type == SUB:
 				self.eat(SUB)
-				res -= self.term()
+			res.right = self.term()
 		return res
-
-	# program : expr ( NEWLINE expr )* ( NEWLINE | SPACE )* EOF
-	def program(self):
-		print self.expr()
-		while self.token.type == NEWLINE:
-			self.eat(NEWLINE)
-			print self.expr()
-		while self.token.type in [NEWLINE, SPACE]:
-			if self.token.type == NEWLINE:
-				self.eat(NEWLINE)
-			if self.token.type == SPACE:
-				self.seat(SPACE)
-		self.eat(EOF)
-
-Parser(' ---(-2 + 18) / (2 + 3) \n 10/(3 + 1)').program()
-Parser('--1--2').program()
-
-
