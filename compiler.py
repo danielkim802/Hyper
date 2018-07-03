@@ -1,24 +1,29 @@
 # primitive types
-INT = 'INT'
-FLOAT = 'FLOAT'
-FUN = 'FUN'
-STRING = 'STRING'
-BOOL = 'BOOL'
+INT      = 'INT'
+FLOAT    = 'FLOAT'
+FUN      = 'FUN'
+STRING   = 'STRING'
+BOOL     = 'BOOL'
 
-NULL = 'NULL'
-EOF = 'EOF'
+# file
+NULL     = 'NULL'
+EOF      = 'EOF'
 
 # arithmetic ops
-ADD = 'ADD'
-SUB = 'SUB'
-MUL = 'MUL'
-DIV = 'DIV'
+ADD      = 'ADD'
+SUB      = 'SUB'
+MUL      = 'MUL'
+DIV      = 'DIV'
 
 # syntax
-SPACE = 'SPACE'
-NEWLINE = 'NEWLINE'
-LPAREN = 'LPAREN'
-RPAREN = 'RPAREN'
+SPACE    = 'SPACE'
+NEWLINE  = 'NEWLINE'
+LPAREN   = 'LPAREN'
+RPAREN   = 'RPAREN'
+LBRACE   = 'LBRACE'
+RBRACE   = 'RBRACE'
+LBRACKET = 'LBRACKET'
+RBRACKET = 'RBRACKET'
 
 class Token(object):
 	def __init__(self, type, value, line):
@@ -77,10 +82,19 @@ class Lexer(object):
 			self.get()
 		return Token(NEWLINE, '\\n', self.line)
 
-	def get_int(self):
+	def get_num(self):
 		i = ""
-		while not self.eof() and self.char.isdigit():
+		dot = False
+		while not self.eof() and self.char.isdigit() or self.char == '.':
+			if self.char == '.':
+				if not dot:
+					dot = True
+				else:
+					self.syntax_error("unexpected token %s" % self.char)
 			i += self.get()
+
+		if dot:
+			return Token(FLOAT, float(i), self.line)
 		return Token(INT, int(i), self.line)
 
 	def get_binop(self):
@@ -94,8 +108,8 @@ class Lexer(object):
 	def get_token(self):
 		if self.eof():
 			return Token(EOF, 'EOF', self.line)
-		if self.char.isdigit():
-			return self.get_int()
+		if self.char.isdigit() or self.char == '.':
+			return self.get_num()
 		if self.is_space(self.char):
 			return self.get_space()
 		if self.is_newline(self.char):
@@ -130,6 +144,11 @@ class AST_Int(AST):
 		self.value = token.value
 		self.token = token
 
+class AST_Float(AST):
+	def __init__(self, token):
+		self.value = token.value
+		self.token = token
+
 class Parser(object):
 	def __init__(self, src):
 		self.lexer = Lexer(src)
@@ -146,7 +165,7 @@ class Parser(object):
 			self.type_error("expected %s but got %s at line %i" % (type, self.token.type, self.token.line))
 		self.token = self.lexer.get_token()
 
-	# factor : [SPACE] INT [SPACE]
+	# factor : [SPACE] ( INT | FLOAT ) [SPACE]
 	#        | [SPACE] LPAREN expr RPAREN [SPACE]
 	#        | [SPACE] ( ADD | SUB )* factor [SPACE]
 	def factor(self):
@@ -167,6 +186,9 @@ class Parser(object):
 		elif self.token.type == INT:
 			res = AST_Int(self.token)
 			self.eat(INT)
+		elif self.token.type == FLOAT:
+			res = AST_Float(self.token)
+			self.eat(FLOAT)
 		else:
 			self.eat(LPAREN)
 			res = self.expr()
@@ -199,3 +221,6 @@ class Parser(object):
 				self.eat(SUB)
 			res.right = self.term()
 		return res
+
+tree = Parser(' (-3. + 0.5) / (10.25 + .2)').expr()
+print tree.right.right.value

@@ -1,0 +1,7 @@
+factor : [SPACE] ( INT | FLOAT ) [SPACE]
+       | [SPACE] LPAREN expr RPAREN [SPACE]
+       | [SPACE] ( ADD | SUB )* factor [SPACE]
+
+term : factor (( MUL | DIV ) factor )*
+
+expr : term (( ADD | SUB ) term )*
