@@ -17,7 +17,8 @@ DIV = 'DIV'
 # syntax
 SPACE = 'SPACE'
 NEWLINE = 'NEWLINE'
-
+LPAREN = 'LPAREN'
+RPAREN = 'RPAREN'
 
 class Token(object):
 	def __init__(self, type, value, line):
@@ -101,6 +102,12 @@ class Lexer(object):
 			return self.get_newline()
 		if self.char in ['+', '-', '*', '/']:
 			return self.get_binop()
+		if self.char == '(':
+			self.get()
+			return Token(LPAREN, '(', self.line)
+		if self.char == ')':
+			self.get()
+			return Token(RPAREN, ')', self.line)
 
 		self.syntax_error("unexpected token %s" % self.char)
 
@@ -121,16 +128,35 @@ class Parser(object):
 		self.token = self.lexer.get_token()
 
 	# factor : [SPACE] INT [SPACE]
+	#        | [SPACE] LPAREN expr RPAREN [SPACE]
+	#        | [SPACE] ( ADD | SUB )* factor [SPACE]
 	def factor(self):
 		while self.token.type == SPACE:
 			self.eat(SPACE)
-		token = self.token
-		self.eat(INT)
+
+		if self.token.type in [ADD, SUB]:
+			unary = 1
+			while self.token.type in [ADD, SUB]:
+				if self.token.type == ADD:
+					unary *= +1
+					self.eat(ADD)
+				if self.token.type == SUB:
+					unary *= -1
+					self.eat(SUB)
+			res = unary * self.factor()
+		elif self.token.type == INT:
+			res = self.token.value
+			self.eat(INT)
+		else:
+			self.eat(LPAREN)
+			res = self.expr()
+			self.eat(RPAREN)
+
 		while self.token.type == SPACE:
 			self.eat(SPACE)
-		return token.value
+		return res
 
-	# term : factor ((*|/) factor )*
+	# term : factor (( MUL | DIV ) factor )*
 	def term(self):
 		res = self.factor()
 		while self.token.type in [MUL, DIV]:
@@ -142,7 +168,7 @@ class Parser(object):
 				res /= self.factor()
 		return res
 
-	# expr : term ((+|-) term )* EOF
+	# expr : term (( ADD | SUB ) term )*
 	def expr(self):
 		res = self.term()
 		while self.token.type in [ADD, SUB]:
@@ -152,9 +178,22 @@ class Parser(object):
 			if self.token.type == SUB:
 				self.eat(SUB)
 				res -= self.term()
-		self.eat(EOF)
 		return res
 
-p = Parser(' 10 / 5 / 3 + 1')
-print p.expr()
+	# program : expr ( NEWLINE expr )* ( NEWLINE | SPACE )* EOF
+	def program(self):
+		print self.expr()
+		while self.token.type == NEWLINE:
+			self.eat(NEWLINE)
+			print self.expr()
+		while self.token.type in [NEWLINE, SPACE]:
+			if self.token.type == NEWLINE:
+				self.eat(NEWLINE)
+			if self.token.type == SPACE:
+				self.seat(SPACE)
+		self.eat(EOF)
+
+Parser(' ---(-2 + 18) / (2 + 3) \n 10/(3 + 1)').program()
+Parser('--1--2').program()
+
 
