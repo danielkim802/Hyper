@@ -1,7 +1,21 @@
-factor : [SPACE] ( INT | FLOAT ) [SPACE]
+variable : [SPACE] NAME [SPACE]
+
+fun_def : FUNDEF (SPACE NAME)* [SPACE] LBRACE compound_stmt RBRACE
+
+factor : [SPACE] (INT | FLOAT | variable | fun_def) [SPACE]
        | [SPACE] LPAREN expr RPAREN [SPACE]
-       | [SPACE] ( ADD | SUB )* factor [SPACE]
+       | [SPACE] (ADD | SUB)* factor [SPACE]
 
-term : factor (( MUL | DIV ) factor )*
+term : factor ((MUL | DIV) factor)*
 
-expr : term (( ADD | SUB ) term )*
+arith_expr : term ((ADD | SUB) term)*
+
+expr : arith_expr
+
+assign_stmt : variable ASSIGN expr
+
+statement : expr | assign_stmt
+
+compound_stmt : ((statement | [SPACE]) NEWLINE)* [statement | SPACE]
+
+program : compound_stmt EOF
