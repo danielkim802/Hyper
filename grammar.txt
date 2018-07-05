@@ -2,15 +2,25 @@ variable : [SPACE] NAME [SPACE]
 
 fun_def : FUNDEF (SPACE NAME)* [SPACE] LBRACE compound_stmt RBRACE
 
-factor : [SPACE] (INT | FLOAT | variable | fun_def) [SPACE]
-       | [SPACE] LPAREN expr RPAREN [SPACE]
-       | [SPACE] (ADD | SUB)* factor [SPACE]
+factor : INT | FLOAT | NAME | fun_def | BOOL
+       | LPAREN expr RPAREN
+       | (ADD | SUB)* factor
 
-term : factor ((MUL | DIV) factor)*
+fun_call : [SPACE] factor (SPACE factor)* [SPACE]
+
+term : fun_call ((MUL | DIV) fun_call)*
 
 arith_expr : term ((ADD | SUB) term)*
 
-expr : arith_expr
+comp_expr : arith_expr ((LT | LTE | GT | GTE | NE | EQ) arith_expr)
+
+bool_factor : [SPACE] [NOT] comp_expr
+
+bool_term : bool_factor (AND bool_factor)*
+
+bool_expr : bool_term (OR bool_term)* 
+
+expr : bool_expr
 
 assign_stmt : variable ASSIGN expr
 

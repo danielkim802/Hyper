@@ -17,6 +17,14 @@ SUB      = 'SUB'
 MUL      = 'MUL'
 DIV      = 'DIV'
 
+# comparison ops
+LT       = "LT"
+LTE      = "LTE"
+GT       = "GT"
+GTE      = "GTE"
+NE       = "NE"
+EQ       = "EQ"
+
 # syntax
 SPACE    = 'SPACE'
 NEWLINE  = 'NEWLINE'
@@ -36,6 +44,9 @@ ELSE     = 'ELSE'
 FOR      = 'FOR'
 WHILE    = 'WHILE'
 FUNDEF   = 'FUNDEF'
+NOT      = 'NOT'
+AND      = 'AND'
+OR       = 'OR'
 
 keywords = {
 	"if"    : IF,
@@ -43,7 +54,12 @@ keywords = {
 	"else"  : ELSE,
 	"for"   : FOR,
 	"while" : WHILE,
-	"fun"   : FUNDEF
+	"fun"   : FUNDEF,
+	"true"  : BOOL,
+	"false" : BOOL,
+	"not"   : NOT,
+	"and"   : AND,
+	"or"    : OR
 }
 
 class Token(object):
@@ -80,10 +96,17 @@ class Lexer(object):
 		return char
 
 	def peek(self):
-		try:
-			return self.char[self.pos + 1]
-		except IndexError:
-			return None
+		pos = self.pos
+		char = self.char
+		line = self.line
+
+		self.get()
+		res = self.char
+
+		self.pos = pos
+		self.char = char
+		self.line = line
+		return res
 
 	def eof(self):
 		return self.char is None
@@ -128,6 +151,23 @@ class Lexer(object):
 			return Token(keywords[res], res, self.line)
 		return Token(NAME, res, self.line)
 
+	def get_compop(self):
+		if self.peek() == '=':
+			return {
+				'<=' : Token(LTE, '<=', self.line),
+				'>=' : Token(GTE, '>=', self.line),
+				'!=' : Token(NE, '!=', self.line),
+				'==' : Token(EQ, '==', self.line)
+			}[self.get() + self.get()]
+
+		if self.char == '!':
+			self.error(self.char, "Invalid syntax")
+
+		return {
+			'<' : Token(LT, '<', self.line),
+			'>' : Token(GT, '>', self.line)
+		}[self.get()]
+
 	def get_binop(self):
 		return {
 			'+' : Token(ADD, '+', self.line),
@@ -147,10 +187,12 @@ class Lexer(object):
 			return self.get_space()
 		if self.is_newline(self.char):
 			return self.get_newline()
-		if self.char == '=':
+		if self.char == '=' and self.peek() != '=':
 			self.get()
 			return Token(ASSIGN, '=', self.line)
-		if self.char in ['+', '-', '*', '/']:
+		if self.char in {'<', '>', '!', '='}:
+			return self.get_compop()
+		if self.char in {'+', '-', '*', '/'}:
 			return self.get_binop()
 		if self.char == '(':
 			self.get()
@@ -193,12 +235,34 @@ class AST_UnaryOp(AST):
 		self.op = self.token = op
 		self.right = right
 
+class AST_CompBinOp(AST):
+	def __init__(self, left, op, right):
+		self.left = left
+		self.op = self.token = op
+		self.right = right
+
+class AST_BoolBinOp(AST):
+	def __init__(self, left, op, right):
+		self.left = left
+		self.op = self.token = op
+		self.right = right
+
+class AST_BoolUnaryOp(AST):
+	def __init__(self, op, right):
+		self.op = self.token = op
+		self.right = right
+
 class AST_Int(AST):
 	def __init__(self, token):
 		self.value = token.value
 		self.token = token
 
 class AST_Float(AST):
+	def __init__(self, token):
+		self.value = token.value
+		self.token = token
+
+class AST_Bool(AST):
 	def __init__(self, token):
 		self.value = token.value
 		self.token = token
@@ -222,6 +286,11 @@ class AST_FunDef(AST):
 		self.token = token
 		self.args = args
 		self.content = stmts
+
+class AST_FunCall(AST):
+	def __init__(self, fun, args):
+		self.fun = fun
+		self.args = args
 
 class AST_Statement(AST):
 	def __init__(self, stmt):
@@ -286,16 +355,18 @@ class Parser(object):
 		self.eat(RBRACE)
 		return AST_FunDef(token, args, stmts)
 
-	# factor : [SPACE] (INT | FLOAT | variable | fun_def) [SPACE]
-	#        | [SPACE] LPAREN expr RPAREN [SPACE]
-	#        | [SPACE] (ADD | SUB)* factor [SPACE]
+	# factor : INT | FLOAT | NAME | fun_def | BOOL
+	#        | LPAREN expr RPAREN
+	#        | (ADD | SUB)* factor
 	def factor(self):
-		self.eat_space()
-
-		if self.token.type == FUNDEF:
+		if self.token.type == BOOL:
+			res = AST_Bool(self.token)
+			self.eat(BOOL)
+		elif self.token.type == FUNDEF:
 			res = self.fun_def()
 		elif self.token.type == NAME:
-			res = self.variable()
+			res = AST_Name(self.token)
+			self.eat(NAME)
 		elif self.token.type in [ADD, SUB]:
 			curr = res = AST_UnaryOp(None, None)
 			while self.token.type in [ADD, SUB]:
@@ -313,24 +384,43 @@ class Parser(object):
 		elif self.token.type == FLOAT:
 			res = AST_Float(self.token)
 			self.eat(FLOAT)
-		else:
+		elif self.token.type == LPAREN:
 			self.eat(LPAREN)
 			res = self.expr()
 			self.eat(RPAREN)
+		else:
+			self.error(self.token, "Unexpected token")
 
-		self.eat_space()
 		return res
 
-	# term : factor ((MUL | DIV) factor)*
+	# fun_call : [SPACE] factor (SPACE factor)* [SPACE]
+	def fun_call(self):
+		self.eat_space()
+
+		res = [self.factor()]
+		while self.token.type == SPACE:
+			self.eat(SPACE)
+			if self.token.type in {INT, FLOAT, NAME, FUNDEF, LPAREN, BOOL}:
+				res += [self.factor()]
+			else:
+				break
+
+		self.eat_space()
+
+		if len(res) == 1:
+			return res[0]
+		return AST_FunCall(res[0], res[1:])
+
+	# term : fun_call ((MUL | DIV) fun_call)*
 	def term(self):
-		res = self.factor()
+		res = self.fun_call()
 		while self.token.type in [MUL, DIV]:
 			res = AST_BinOp(res, self.token, None)
 			if self.token.type == MUL:
 				self.eat(MUL)
 			if self.token.type == DIV:
 				self.eat(DIV)
-			res.right = self.factor()
+			res.right = self.fun_call()
 		return res
 
 	# arith_expr : term ((ADD | SUB) term)*
@@ -345,9 +435,58 @@ class Parser(object):
 			res.right = self.term()
 		return res
 
-	# expr : arith_expr
+	# comp_expr : arith_expr ((LT | LTE | GT | GTE | NE | EQ) arith_expr)
+	def comp_expr(self):
+		res = self.arith_expr()
+		ops = {LT, LTE, GT, GTE, NE, EQ}
+		while self.token.type in ops:
+			res = AST_CompBinOp(res, self.token, None)
+			if self.token.type == LT:
+				self.eat(LT)
+			if self.token.type == LTE:
+				self.eat(LTE)
+			if self.token.type == GT:
+				self.eat(GT)
+			if self.token.type == GTE:
+				self.eat(GTE)
+			if self.token.type == NE:
+				self.eat(NE)
+			if self.token.type == EQ:
+				self.eat(EQ)
+			res.right = self.arith_expr()
+		return res
+
+	# bool_factor : [SPACE] [NOT] comp_expr
+	def bool_factor(self):
+		if self.token.type == SPACE:
+			self.eat(SPACE)
+		if self.token.type == NOT:
+			token = self.token
+			self.eat(NOT)
+			return AST_BoolUnaryOp(token, self.comp_expr())
+		return self.comp_expr()
+
+	# bool_term : bool_factor (AND bool_factor)*
+	def bool_term(self):
+		res = self.bool_factor()
+		while self.token.type == AND:
+			res = AST_BoolBinOp(res, self.token, None)
+			self.eat(AND)
+			res.right = self.bool_factor()
+		return res
+
+	# bool_expr : bool_term (OR bool_term)* 
+	def bool_expr(self):
+		res = self.bool_term()
+		while self.token.type == OR:
+			res = AST_BoolBinOp(res, self.token, None)
+			self.eat(OR)
+			res.right = self.bool_term()
+		return res
+
+	# expr : bool_expr
 	def expr(self):
-		return self.arith_expr()
+		return self.bool_expr()
 
 	# assign_stmt : variable ASSIGN expr
 	def assign_stmt(self):
@@ -397,5 +536,7 @@ class Parser(object):
 		return compound
 
 text = open("script.txt", "r").read()
-tree = Parser(text).program()
-print tree.stmts[0].right.args
+parser = Parser(text)
+parser.trace = False
+tree = parser.program()
+print tree.stmts[0].right.right
