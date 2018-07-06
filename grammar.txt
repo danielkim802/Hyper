@@ -6,13 +6,16 @@ struct_def : STRUCTDEF (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
 
 array_def : LBRACKET [(NEWLINE | SPACE)* expr (NEWLINE | SPACE)* (COMMA (NEWLINE | SPACE)* expr (NEWLINE | SPACE)*)*] RBRACKET
 
-factor : INT | FLOAT | NAME | BOOL | fun_def | struct_def | array_def
+factor : INT | FLOAT | NAME | BOOL | STRING 
+       | fun_def | struct_def | array_def
        | LPAREN expr RPAREN
        | (ADD | SUB)* factor
 
 array_index : factor (LBRACKET (NEWLINE | SPACE)* factor (NEWLINE | SPACE)* RBRACKET)*
 
-fun_call : [SPACE] array_index (SPACE array_index)* [SPACE]
+attr_ref : array_index (DOT array_index)*
+
+fun_call : [SPACE] attr_ref (SPACE attr_ref)* [SPACE]
 
 term : fun_call ((MUL | DIV) fun_call)*
 
@@ -28,7 +31,7 @@ bool_expr : bool_term (OR bool_term)*
 
 expr : bool_expr
 
-assign_stmt : variable ASSIGN expr
+assign_stmt : (variable | array_index) ASSIGN expr
 
 if_stmt : IF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE (NEWLINE | SPACE)*
           (ELIF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE (NEWLINE | SPACE)*)* 
@@ -40,7 +43,9 @@ while_stmt : WHILE expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
 
 for_stmt : FOR SPACE NAME SPACE IN expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
 
-statement : expr | assign_stmt | if_stmt | return_stmt | while_stmt | for_stmt
+print_stmt : PRINT expr
+
+statement : expr | assign_stmt | if_stmt | return_stmt | while_stmt | for_stmt | print_stmt
 
 compound_stmt : ((statement | [SPACE]) NEWLINE)* [statement | SPACE]
 

@@ -37,6 +37,7 @@ LBRACKET = 'LBRACKET'
 RBRACKET = 'RBRACKET'
 ASSIGN   = 'ASSIGN'
 COMMA    = 'COMMA'
+DOT      = 'DOT'
 
 # control, keywords
 IF       = 'IF'
@@ -51,6 +52,7 @@ NOT      = 'NOT'
 AND      = 'AND'
 OR       = 'OR'
 RETURN   = 'RETURN'
+PRINT    = 'PRINT'
 
 keywords = {
 	"if"    : IF,
@@ -66,7 +68,8 @@ keywords = {
 	"not"   : NOT,
 	"and"   : AND,
 	"or"    : OR,
-	"return": RETURN
+	"return": RETURN,
+	"print" : PRINT
 }
 
 class Token(object):
@@ -183,13 +186,28 @@ class Lexer(object):
 			'/' : Token(DIV, '/', self.line)
 		}[self.get()]
 
+	def get_string(self):
+		self.get()
+		res = ""
+		while not self.eof() and self.char != "'":
+			res += self.get()
+
+		if self.eof():
+			self.error("'", "Incomplete string")
+
+		self.get()
+		return Token(STRING, res, self.line)
+
 	def get_token(self):
 		if self.eof():
 			return Token(EOF, 'EOF', self.line)
 		if self.char.isalpha() or self.char == '_':
 			return self.get_name_or_keyword()
-		if self.char.isdigit() or self.char == '.':
+		if self.char.isdigit() or (self.char == '.' and self.peek() is not None and self.peek().isdigit()):
 			return self.get_num()
+		if self.char == '.':
+			self.get()
+			return Token(DOT, '.', self.line)
 		if self.is_space(self.char):
 			return self.get_space()
 		if self.is_newline(self.char):
@@ -222,6 +240,8 @@ class Lexer(object):
 		if self.char == ',':
 			self.get()
 			return Token(COMMA, ',', self.line)
+		if self.char == '\'':
+			return self.get_string()
 
 		self.error(self.char, "Invalid syntax")
 
@@ -279,6 +299,11 @@ class AST_Float(AST):
 		self.token = token
 
 class AST_Bool(AST):
+	def __init__(self, token):
+		self.value = token.value
+		self.token = token
+
+class AST_String(AST):
 	def __init__(self, token):
 		self.value = token.value
 		self.token = token
@@ -342,7 +367,18 @@ class AST_ArrayIndex(AST):
 		self.arr = arr
 		self.idx = idx
 
+class AST_AttrRef(AST):
+	def __init__(self, obj, token, ref):
+		self.obj = obj
+		self.token = token
+		self.ref = ref
+
 class AST_Return(AST):
+	def __init__(self, token, expr):
+		self.token = token
+		self.expr = expr
+
+class AST_Print(AST):
 	def __init__(self, token, expr):
 		self.token = token
 		self.expr = expr
@@ -443,13 +479,17 @@ class Parser(object):
 		self.eat(RBRACKET)
 		return res
 
-	# factor : INT | FLOAT | NAME | BOOL | fun_def | struct_def | array_def
+	# factor : INT | FLOAT | NAME | BOOL | STRING 
+	#        | fun_def | struct_def | array_def
 	#        | LPAREN expr RPAREN
 	#        | (ADD | SUB) factor
 	def factor(self):
 		if self.token.type == BOOL:
 			res = AST_Bool(self.token)
 			self.eat(BOOL)
+		elif self.token.type == STRING:
+			res = AST_String(self.token)
+			self.eat(STRING)
 		elif self.token.type == STRUCTDEF:
 			res = self.struct_def()
 		elif self.token.type == FUNDEF:
@@ -485,25 +525,32 @@ class Parser(object):
 	# array_index : factor (LBRACKET (NEWLINE | SPACE)* factor (NEWLINE | SPACE)* RBRACKET)*
 	def array_index(self):
 		res = self.factor()
-
 		while self.token.type == LBRACKET:
 			self.eat(LBRACKET)
 			self.eat_newline_space()
 			res = AST_ArrayIndex(res, self.factor())
 			self.eat_newline_space()
 			self.eat(RBRACKET)
-
 		return res
 
-	# fun_call : [SPACE] array_index (SPACE array_index)* [SPACE]
+	# attr_ref : array_index (DOT array_index)*
+	def attr_ref(self):
+		res = self.array_index()
+		while self.token.type == DOT:
+			token = self.token
+			self.eat(DOT)
+			res = AST_AttrRef(res, token, self.array_index())
+		return res
+
+	# fun_call : [SPACE] attr_ref (SPACE attr_ref)* [SPACE]
 	def fun_call(self):
 		self.eat_space()
 
-		res = [self.array_index()]
+		res = [self.attr_ref()]
 		while self.token.type == SPACE:
 			self.eat(SPACE)
-			if self.token.type in {INT, FLOAT, NAME, FUNDEF, STRUCTDEF, LPAREN, LBRACKET, BOOL}:
-				res += [self.array_index()]
+			if self.token.type in {INT, FLOAT, NAME, FUNDEF, STRUCTDEF, LPAREN, LBRACKET, BOOL, STRING}:
+				res += [self.attr_ref()]
 			else:
 				break
 
@@ -590,7 +637,7 @@ class Parser(object):
 	def expr(self):
 		return self.bool_expr()
 
-	# assign_stmt : variable ASSIGN expr
+	# assign_stmt : (variable | array_index) ASSIGN expr
 	def assign_stmt(self):
 		expr = self.expr()
 
@@ -601,7 +648,7 @@ class Parser(object):
 		self.eat(ASSIGN)
 		right = self.expr()
 
-		if type(expr) != AST_Name:
+		if type(expr) not in [AST_Name, AST_ArrayIndex]:
 			self.error(token, "Invalid assignment target")
 
 		return AST_Assign(expr, token, right)
@@ -615,7 +662,7 @@ class Parser(object):
 
 	# if_stmt : IF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE (NEWLINE | SPACE)*
 	#           (ELIF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE (NEWLINE | SPACE)*)* 
-	#           [ELSE (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE]
+	#           [ELSE (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE] [SPACE]
 	def if_stmt(self):
 		iftoken = self.token
 		self.eat(IF)
@@ -624,10 +671,16 @@ class Parser(object):
 		self.eat(LBRACE)
 		ifcompound_stmt = self.compound_stmt()
 		self.eat(RBRACE)
-		self.eat_newline_space()
 
-		elifs = []
-		while self.token.type == ELIF:
+		self.eat_space()
+		while self.token.type == self.peek().type == NEWLINE:
+			self.eat(NEWLINE)
+			self.eat_space()
+
+		elifs = []			
+		while self.token.type == ELIF or self.peek().type == ELIF:
+			if self.token.type == NEWLINE:
+				self.eat(NEWLINE)
 			eliftoken = self.token
 			self.eat(ELIF)
 			elifcond = self.expr()
@@ -637,17 +690,23 @@ class Parser(object):
 			self.eat(RBRACE)
 			elifs += [(eliftoken, elifcond, elifcompound_stmt)]
 
-			self.eat_newline_space()
+			self.eat_space()
+			while self.token.type == self.peek().type == NEWLINE:
+				self.eat(NEWLINE)
+				self.eat_space()
 
-		if self.token.type == ELSE:
+		if self.token.type == ELSE or self.peek().type == ELSE:
+			if self.token.type == NEWLINE:
+				self.eat(NEWLINE)
 			elsetoken = self.token
 			self.eat(ELSE)
 			self.eat_newline_space()
 			self.eat(LBRACE)
 			elsecompound_stmt = self.compound_stmt()
 			self.eat(RBRACE)
-
+			self.eat_space()
 			return AST_If((iftoken, ifcond, ifcompound_stmt), elifs, (elsetoken, elsecompound_stmt))
+		self.eat_space()
 		return AST_If((iftoken, ifcond, ifcompound_stmt), elifs, None)
 
 	# return_stmt : RETURN expr
@@ -657,7 +716,7 @@ class Parser(object):
 		expr = self.expr()
 		return AST_Return(token, expr)
 
-	# while_stmt : WHILE expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
+	# while_stmt : WHILE expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE [SPACE]
 	def while_stmt(self):
 		token = self.token
 		self.eat(WHILE)
@@ -666,9 +725,10 @@ class Parser(object):
 		self.eat(LBRACE)
 		content = self.compound_stmt()
 		self.eat(RBRACE)
+		self.eat_space()
 		return AST_While(token, condition, content)
 
-	# for_stmt : FOR SPACE NAME SPACE IN expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
+	# for_stmt : FOR SPACE NAME SPACE IN expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE [SPACE]
 	def for_stmt(self):
 		token = self.token
 		self.eat(FOR)
@@ -682,9 +742,17 @@ class Parser(object):
 		self.eat(LBRACE)
 		content = self.compound_stmt()
 		self.eat(RBRACE)
+		self.eat_space()
 		return AST_For(token, var, expr, content)
 
-	# statement : expr | assign_stmt | if_stmt | return_stmt | while_stmt | for_stmt
+	# print_stmt : PRINT expr
+	def print_stmt(self):
+		token = self.token
+		self.eat(PRINT)
+		expr = self.expr()
+		return AST_Print(token, expr)
+
+	# statement : expr | assign_stmt | if_stmt | return_stmt | while_stmt | for_stmt | print_stmt
 	def statement(self):
 		if self.token.type == IF:
 			return self.if_stmt()
@@ -694,6 +762,8 @@ class Parser(object):
 			return self.while_stmt()
 		if self.token.type == FOR:
 			return self.for_stmt()
+		if self.token.type == PRINT:
+			return self.print_stmt()
 		return self.assign_stmt()
 
 	# compound_stmt : ((statement | [SPACE]) NEWLINE)* [statement | SPACE]
@@ -725,6 +795,6 @@ class Parser(object):
 
 text = open("script.txt", "r").read()
 tree = Parser(text, trace=False).program()
-print tree.stmts[3]
+print tree.stmts[1].expr.obj.obj.args
 
 
