@@ -1,4 +1,4 @@
-import sys
+import sys, time
 
 # primitive types
 INT      = 'INT'
@@ -69,7 +69,8 @@ keywords = {
 	"and"   : AND,
 	"or"    : OR,
 	"return": RETURN,
-	"print" : PRINT
+	"print" : PRINT,
+	"null"  : NULL
 }
 
 class Token(object):
@@ -89,7 +90,7 @@ class Lexer(object):
 		self.line = 1
 
 	def error(self, char, msg):
-		print "line %i: '%s' %s" % (self.line, char, msg)
+		print "line %i [SyntaxError]: '%s' %s" % (self.line, char, msg)
 		sys.exit(0)
 
 	def get(self):
@@ -148,7 +149,7 @@ class Lexer(object):
 			try:
 				return Token(FLOAT, float(i), self.line)
 			except ValueError:
-				self.syntax_error("unexpected token %s" % self.char)
+				self.error(self.char, "unexpected token")
 		return Token(INT, int(i), self.line)
 
 	def get_name_or_keyword(self):
@@ -201,9 +202,15 @@ class Lexer(object):
 	def get_token(self):
 		if self.eof():
 			return Token(EOF, 'EOF', self.line)
+		if self.char == ';':
+			while not self.eof() and self.char != '\n':
+				self.get()
+			if self.char == '\n':
+				self.get()
+			return self.get_token()
 		if self.char.isalpha() or self.char == '_':
 			return self.get_name_or_keyword()
-		if self.char.isdigit() or (self.char == '.' and self.peek() is not None and self.peek().isdigit()):
+		if self.char.isdigit() or self.char == '.' and self.peek() is not None and self.peek().isdigit():
 			return self.get_num()
 		if self.char == '.':
 			self.get()
@@ -308,6 +315,11 @@ class AST_String(AST):
 		self.value = token.value
 		self.token = token
 
+class AST_Null(AST):
+	def __init__(self, token):
+		self.value = token.value
+		self.token = token
+
 class AST_Name(AST):
 	def __init__(self, token):
 		self.name = token.value
@@ -397,14 +409,13 @@ class Parser(object):
 		self.token = self.lexer.get_token()
 		self.trace = trace
 
-	def type_error(self, msg):
-		raise TypeError(msg)
-
-	def syntax_error(self, msg):
-		raise SyntaxError(msg)
-
 	def error(self, token, msg):
-		print "line %i: '%s' %s" % (token.line, token.value, msg)
+		if token.type == NEWLINE:
+			print "line %i [SyntaxError]: %s" % (token.line - 1, "Unexpected end of statement")
+		elif token.type == EOF:
+			print "line %i [SyntaxError]: %s" % (token.line, "Unexpected end of statement")
+		else:
+			print "line %i [SyntaxError]: '%s' %s" % (token.line, str(token.value), msg)
 		if self.trace:
 			raise Exception()
 		sys.exit(0)
@@ -457,7 +468,7 @@ class Parser(object):
 		self.eat(RBRACE)
 		return AST_StructDef(token, stmts)
 
-	# array_def : LBRACKET [(NEWLINE | SPACE)* expr (NEWLINE | SPACE)* (COMMA (NEWLINE | SPACE)* expr (NEWLINE | SPACE)*)*] RBRACKET
+	# array_def : LBRACKET (NEWLINE | SPACE)* [expr (NEWLINE | SPACE)* (COMMA (NEWLINE | SPACE)* expr (NEWLINE | SPACE)*)*] RBRACKET
 	def array_def(self):
 		res = AST_ArrayDef(self.token, [])
 		self.eat(LBRACKET)
@@ -479,14 +490,16 @@ class Parser(object):
 		self.eat(RBRACKET)
 		return res
 
-	# factor : INT | FLOAT | NAME | BOOL | STRING 
+	# factor : INT | FLOAT | NAME | BOOL | STRING | NULL
 	#        | fun_def | struct_def | array_def
 	#        | LPAREN expr RPAREN
-	#        | (ADD | SUB) factor
 	def factor(self):
 		if self.token.type == BOOL:
 			res = AST_Bool(self.token)
 			self.eat(BOOL)
+		elif self.token.type == NULL:
+			res = AST_Null(self.token)
+			self.eat(NULL)
 		elif self.token.type == STRING:
 			res = AST_String(self.token)
 			self.eat(STRING)
@@ -499,14 +512,6 @@ class Parser(object):
 		elif self.token.type == NAME:
 			res = AST_Name(self.token)
 			self.eat(NAME)
-		elif self.token.type == ADD:
-			token = self.token
-			self.eat(ADD)
-			res = AST_UnaryOp(token, self.factor())
-		elif self.token.type == SUB:
-			token = self.token
-			self.eat(SUB)
-			res = AST_UnaryOp(token, self.factor())
 		elif self.token.type == INT:
 			res = AST_Int(self.token)
 			self.eat(INT)
@@ -549,7 +554,8 @@ class Parser(object):
 		res = [self.attr_ref()]
 		while self.token.type == SPACE:
 			self.eat(SPACE)
-			if self.token.type in {INT, FLOAT, NAME, FUNDEF, STRUCTDEF, LPAREN, LBRACKET, BOOL, STRING}:
+			if self.token.type in {INT, FLOAT, NAME, FUNDEF, STRUCTDEF, 
+			                       LPAREN, LBRACKET, BOOL, STRING, NULL}:
 				res += [self.attr_ref()]
 			else:
 				break
@@ -560,16 +566,31 @@ class Parser(object):
 			return res[0]
 		return AST_FunCall(res[0], res[1:])
 
-	# term : fun_call ((MUL | DIV) fun_call)*
+	# unary_op : [SPACE] (ADD | SUB)* fun_call
+	def unary_op(self):
+		self.eat_space()
+		res = curr = AST_UnaryOp(None, None)
+		while self.token.type in {ADD, SUB}:
+			token = self.token
+			if self.token.type == ADD:
+				self.eat(ADD)
+			if self.token.type == SUB:
+				self.eat(SUB)
+			curr.right = AST_UnaryOp(token, None)
+			curr = curr.right
+		curr.right = self.fun_call()
+		return res.right
+
+	# term : unary_op ((MUL | DIV) unary_op)*
 	def term(self):
-		res = self.fun_call()
+		res = self.unary_op()
 		while self.token.type in [MUL, DIV]:
 			res = AST_BinOp(res, self.token, None)
 			if self.token.type == MUL:
 				self.eat(MUL)
 			if self.token.type == DIV:
 				self.eat(DIV)
-			res.right = self.fun_call()
+			res.right = self.unary_op()
 		return res
 
 	# arith_expr : term ((ADD | SUB) term)*
@@ -648,7 +669,7 @@ class Parser(object):
 		self.eat(ASSIGN)
 		right = self.expr()
 
-		if type(expr) not in [AST_Name, AST_ArrayIndex]:
+		if type(expr) not in [AST_Name, AST_ArrayIndex, AST_AttrRef]:
 			self.error(token, "Invalid assignment target")
 
 		return AST_Assign(expr, token, right)
@@ -793,8 +814,10 @@ class Parser(object):
 		self.eat(EOF)
 		return compound
 
+	def parse(self):
+		return self.program()
+
 text = open("script.txt", "r").read()
-tree = Parser(text, trace=False).program()
-print tree.stmts[1].expr.obj.obj.args
-
-
+start = time.time()
+tree = Parser(text, trace=True).parse()
+print tree.stmts

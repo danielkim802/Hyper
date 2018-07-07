@@ -4,12 +4,11 @@ fun_def : FUNDEF (SPACE NAME)* (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
 
 struct_def : STRUCTDEF (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
 
-array_def : LBRACKET [(NEWLINE | SPACE)* expr (NEWLINE | SPACE)* (COMMA (NEWLINE | SPACE)* expr (NEWLINE | SPACE)*)*] RBRACKET
+array_def : LBRACKET (NEWLINE | SPACE)* [expr (NEWLINE | SPACE)* (COMMA (NEWLINE | SPACE)* expr (NEWLINE | SPACE)*)*] RBRACKET
 
-factor : INT | FLOAT | NAME | BOOL | STRING 
+factor : INT | FLOAT | NAME | BOOL | STRING | NULL
        | fun_def | struct_def | array_def
        | LPAREN expr RPAREN
-       | (ADD | SUB)* factor
 
 array_index : factor (LBRACKET (NEWLINE | SPACE)* factor (NEWLINE | SPACE)* RBRACKET)*
 
@@ -17,7 +16,9 @@ attr_ref : array_index (DOT array_index)*
 
 fun_call : [SPACE] attr_ref (SPACE attr_ref)* [SPACE]
 
-term : fun_call ((MUL | DIV) fun_call)*
+unary_op : (ADD | SUB)* fun_call
+
+term : unary_op ((MUL | DIV) unary_op)*
 
 arith_expr : term ((ADD | SUB) term)*
 
