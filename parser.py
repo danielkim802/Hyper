@@ -383,7 +383,8 @@ class AST_ArrayDef(AST):
 		self.arr = arr
 
 class AST_ArrayIndex(AST):
-	def __init__(self, arr, idx):
+	def __init__(self, token, arr, idx):
+		self.token = token
 		self.arr = arr
 		self.idx = idx
 
@@ -535,36 +536,42 @@ class Parser(object):
 
 		return res
 
-	# array_index : factor (LBRACKET (NEWLINE | SPACE)* factor (NEWLINE | SPACE)* RBRACKET)*
+	# array_index : LBRACKET (NEWLINE | SPACE)* expr (NEWLINE | SPACE)* RBRACKET
 	def array_index(self):
+		self.eat(LBRACKET)
+		self.eat_newline_space()
+		res = self.expr()
+		self.eat_newline_space()
+		self.eat(RBRACKET)
+		return res
+
+	# get_attr : factor (array_index* DOT factor)* array_index*
+	def get_attr(self):
 		res = self.factor()
-		while self.token.type == LBRACKET:
-			self.eat(LBRACKET)
-			self.eat_newline_space()
-			res = AST_ArrayIndex(res, self.factor())
-			self.eat_newline_space()
-			self.eat(RBRACKET)
+		while self.token.type in [DOT, LBRACKET]:
+			while self.token.type == LBRACKET:
+				res = AST_ArrayIndex(self.token, res, self.array_index())
+			if self.token.type == DOT:
+				token = self.token
+				self.eat(DOT)
+				name = self.factor()
+				if type(name) != AST_Name:
+					self.error(token, "Invalid attribute")
+				res = AST_AttrRef(res, token, name)
+			else:
+				break
 		return res
 
-	# attr_ref : array_index (DOT array_index)*
-	def attr_ref(self):
-		res = self.array_index()
-		while self.token.type == DOT:
-			token = self.token
-			self.eat(DOT)
-			res = AST_AttrRef(res, token, self.array_index())
-		return res
-
-	# fun_call : [SPACE] attr_ref (SPACE attr_ref)* [SPACE]
+	# fun_call : [SPACE] get_attr (SPACE get_attr)* [SPACE]
 	def fun_call(self):
 		self.eat_space()
 
-		res = [self.attr_ref()]
+		res = [self.get_attr()]
 		while self.token.type == SPACE:
 			self.eat(SPACE)
 			if self.token.type in {INT, FLOAT, NAME, FUNDEF, STRUCTDEF, 
 			                       LPAREN, LBRACKET, BOOL, STRING, NULL}:
-				res += [self.attr_ref()]
+				res += [self.get_attr()]
 			else:
 				break
 
@@ -841,3 +848,6 @@ class Parser(object):
 
 	def parse(self):
 		return self.program()
+
+# tree = Parser(open("script.txt", 'r').read(), trace=False).parse()
+# print tree.stmts[0].obj
