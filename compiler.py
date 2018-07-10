@@ -27,6 +27,22 @@ LOAD_NAME = 0x14
 FUN_CALL = 0x0F
 GET_ATTR = 0x10
 ARR_IDX = 0x11
+MAKE_STRUCT = 0x18
+MAKE_ARR = 0x19
+PUSH_ENV = 0x1A
+POP_ENV = 0x1B
+MAKE_FUN = 0x17
+JMP = 0x2A
+ASSIGN_NAME = 0x1F
+STORE_ARR = 0x1D
+STORE_ATTR = 0x2D
+STORE_NAME = 0x1E
+RETURN = 0x2E
+PUSH_PC = 0x2F
+PRINT = 0x29
+BTRUE = 0x27
+BFALSE = 0x28
+HALT = 0x2C
 
 opcodes = {
 	AND        : "and",
@@ -53,6 +69,22 @@ opcodes = {
 	FUN_CALL   : "fun_call",
 	GET_ATTR   : "get_attr",
 	ARR_IDX    : "arr_idx",
+	MAKE_ARR   : "make_arr",
+	MAKE_STRUCT: "make_struct",
+	PUSH_ENV   : "push_env",
+	POP_ENV    : "pop_env",
+	MAKE_FUN   : "make_fun",
+	JMP        : "jmp",
+	ASSIGN_NAME: "assign_name",
+	STORE_ARR  : "store_arr",
+	STORE_ATTR : "store_attr",
+	STORE_NAME : "store_name",
+	RETURN     : "return",
+	PUSH_PC    : "push_pc",
+	PRINT      : "print",
+	BTRUE      : "btrue",
+	BFALSE     : "bfalse",
+	HALT       : "halt",
 }
 
 class ASTTraverser(object):
@@ -71,6 +103,32 @@ class Compiler(ASTTraverser):
 		self.parser = parser.Parser(text)
 		self.buffer = bytearray()
 		self.line = 1
+
+	def save(self, type):
+		pos = len(self.buffer)
+		if type == parser.FLOAT:
+			self.buffer += 8 * chr(0)
+		elif type == parser.INT:
+			self.buffer += 8 * chr(0)
+		elif type == parser.BOOL:
+			self.buffer += chr(0)
+		return pos
+
+	def write_saved(self, position, type, obj):
+		if type == parser.FLOAT:
+			typ = 'd'
+		elif type == parser.INT:
+			typ = 'd'
+		elif type == parser.BOOL:
+			typ = 'c'
+		elif type == parser.STRING:
+			obj += chr(0)
+			typ = str(len(obj)) + 's'
+		else:
+			typ = None
+		bytearr = struct.pack(typ, obj)
+		for i in range(len(bytearr)):
+			self.buffer[position + i] = bytearr[i]
 
 	def write_cmd(self, cmd, token=None):
 		if token is not None:
@@ -173,6 +231,7 @@ class Compiler(ASTTraverser):
 			self.write_cmd(NOT, node.token)
 
 	def visit_FunCall(self, node):
+		self.write_cmd(PUSH_PC)
 		for i in reversed(node.args):
 			self.visit(i)
 		self.visit(node.fun)
@@ -188,6 +247,114 @@ class Compiler(ASTTraverser):
 		self.visit(node.arr)
 		self.visit(node.idx)
 		self.write_cmd(ARR_IDX, node.token)
+
+	def visit_ArrayDef(self, node):
+		for i in reversed(node.arr):
+			self.visit(i)
+		self.write_cmd(MAKE_ARR, node.token)
+		self.write_value(parser.INT, len(node.arr))
+
+	def visit_StructDef(self, node):
+		self.write_cmd(PUSH_ENV)
+		self.visit(node.content)
+		self.write_cmd(MAKE_STRUCT, node.token)
+		self.write_cmd(POP_ENV)
+
+	def visit_FunDef(self, node):
+		self.write_cmd(MAKE_FUN, node.token)
+		addr = self.save(parser.INT)
+		self.write_value(parser.INT, len(node.args))
+		for i in node.args:
+			self.write_value(parser.STRING, i.name)
+		self.write_cmd(JMP)
+		jmp_addr = self.save(parser.INT)
+		self.write_saved(addr, parser.INT, len(self.buffer))
+		self.write_cmd(PUSH_ENV)
+		self.visit(node.content)
+		self.write_saved(jmp_addr, parser.INT, len(self.buffer))
+
+	def visit_Assign(self, node):
+		self.visit(node.right)
+		if type(node.var) == parser.AST_Name:
+			self.write_cmd(ASSIGN_NAME, node.token)
+			self.write_value(parser.STRING, node.var.name)
+		if type(node.var) == parser.AST_ArrayIndex:
+			self.visit(node.var.idx)
+			self.visit(node.var.arr)
+			self.write_cmd(STORE_ARR, node.token)
+		if type(node.var) == parser.AST_AttrRef:
+			self.visit(node.var.obj)
+			self.write_cmd(STORE_ATTR, node.token)
+			self.write_value(parser.STRING, node.var.ref.name)
+
+	def visit_Declaration(self, node):
+		if node.right is not None:
+			self.visit(node.right)
+
+		self.write_cmd(STORE_NAME, node.token)
+		self.write_value(parser.STRING, node.var.name)
+
+		if node.right is not None:
+			self.write_cmd(ASSIGN_NAME)
+			self.write_value(parser.STRING, node.var.name)
+
+	def visit_Return(self, node):
+		if node.expr is not None:
+			self.visit(node.expr)
+		else:
+			self.write_cmd(LOAD_NULL, node.token)
+		self.write_cmd(RETURN, node.token)
+
+	def visit_Print(self, node):
+		if node.expr is not None:
+			self.visit(node.expr)
+		else:
+			self.write_cmd(LOAD_NULL, node.token)
+		self.write_cmd(PRINT, node.token)
+
+	def visit_If(self, node):
+		iftoken, ifcondition, ifcompound = node.ifcontent
+		self.visit(ifcondition)
+		self.write_cmd(BFALSE, iftoken)
+		ifaddr = self.save(parser.INT)
+		self.write_cmd(PUSH_ENV, iftoken)
+		self.visit(ifcompound)
+		self.write_cmd(POP_ENV)
+		self.write_cmd(JMP)
+		ifjmp = self.save(parser.INT)
+		self.write_saved(ifaddr, parser.INT, len(self.buffer))
+
+		elifjmps = []
+		for (eliftoken, elifcondition, elifcompound) in node.elifcontents:
+			self.visit(elifcondition)
+			self.write_cmd(BFALSE, eliftoken)
+			elifaddr = self.save(parser.INT)
+			self.write_cmd(PUSH_ENV, eliftoken)
+			self.visit(elifcompound)
+			self.write_cmd(POP_ENV)
+			self.write_cmd(JMP)
+			elifjmp = self.save(parser.INT)
+			elifjmps += [elifjmp]
+			self.write_saved(elifaddr, parser.INT, len(self.buffer))
+
+		if node.elsecontent is not None:
+			elsetoken, elsecompound = node.elsecontent
+			self.write_cmd(PUSH_ENV, elsetoken)
+			self.visit(elsecompound)
+			self.write_cmd(POP_ENV)
+
+		self.write_saved(ifjmp, parser.INT, len(self.buffer))
+		for elifjmp in elifjmps:
+			self.write_saved(elifjmp, parser.INT, len(self.buffer))
+
+	def visit_EOF(self, node):
+		self.write_cmd(HALT, node.token)
+
+	def visit_Program(self, node):
+		self.write_cmd(PUSH_ENV)
+		self.visit(node.content)
+		self.write_cmd(POP_ENV)
+		self.visit(node.eof)
 
 	def compile(self):
 		ast = self.parser.parse()
@@ -247,11 +414,12 @@ class Disassembler(object):
 
 	def read_cmd(self):
 		global opcodes
+		pos = self.ptr
 		byte = ord(self.get())
 		cmd = opcodes[byte]
 		line = self.get_int()
 		func = getattr(self, "read_" + cmd, self.read_error)
-		self.text += str(line) + " " + cmd + " "
+		self.text += "[" + str(pos) + "] " + str(line) + " " + cmd + " "
 		func(byte)
 		self.text += '\n'
 
@@ -331,6 +499,60 @@ class Disassembler(object):
 		self.text += name
 
 	def read_arr_idx(self, opcode):
+		pass
+
+	def read_make_arr(self, opcode):
+		length = self.get_int()
+		self.text += str(length)
+
+	def read_make_struct(self, opcode):
+		pass
+
+	def read_push_env(self, opcode):
+		pass
+
+	def read_pop_env(self, opcode):
+		pass
+
+	def read_make_fun(self, opcode):
+		ptr = self.get_int()
+		args = self.get_int()
+		names = ""
+		for i in range(args):
+			names += self.get_string() + " "
+		self.text += str(ptr) + " " + str(args) + " " + names
+
+	def read_jmp(self, opcode):
+		self.text += str(self.get_int())
+
+	def read_assign_name(self, opcode):
+		self.text += self.get_string()
+
+	def read_store_arr(self, opcode):
+		pass
+
+	def read_store_attr(self, opcode):
+		self.text += self.get_string()
+
+	def read_store_name(self, opcode):
+		self.text += self.get_string()
+
+	def read_push_pc(self, opcode):
+		pass
+
+	def read_return(self, opcode):
+		pass
+
+	def read_print(self, opcode):
+		pass
+
+	def read_btrue(self, opcode):
+		self.text += str(self.get_int())
+
+	def read_bfalse(self, opcode):
+		self.text += str(self.get_int())
+
+	def read_halt(self, opcode):
 		pass
 
 	def disassemble(self):

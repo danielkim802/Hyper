@@ -32,7 +32,7 @@ bool_expr : bool_term (OR bool_term)*
 
 expr : bool_expr
 
-assign_stmt : (variable | attr_ref) ASSIGN expr
+assign_stmt : attr_ref ASSIGN expr
 
 declaration_stmt : VAR SPACE variable [ASSIGN expr]
 
@@ -40,13 +40,13 @@ if_stmt : IF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE (NEWLINE | SPAC
           (ELIF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE (NEWLINE | SPACE)*)* 
           [ELSE (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE]
 
-return_stmt : RETURN expr
+return_stmt : RETURN [expr]
 
 while_stmt : WHILE expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
 
 for_stmt : FOR SPACE NAME SPACE IN expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
 
-print_stmt : PRINT expr
+print_stmt : PRINT [expr]
 
 statement : expr | assign_stmt | if_stmt | return_stmt | while_stmt | for_stmt | print_stmt | declaration_stmt
 

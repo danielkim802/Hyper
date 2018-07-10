@@ -202,14 +202,12 @@ class Lexer(object):
 		return Token(STRING, res, self.line)
 
 	def get_token(self):
-		if self.eof():
-			return Token(EOF, 'EOF', self.line)
 		if self.char == ';':
 			while not self.eof() and self.char != '\n':
 				self.get()
-			if self.char == '\n':
-				self.get()
-			return self.get_token()
+
+		if self.eof():
+			return Token(EOF, 'EOF', self.line)
 		if self.char.isalpha() or self.char == '_':
 			return self.get_name_or_keyword()
 		if self.char.isdigit() or self.char == '.' and self.peek() is not None and self.peek().isdigit():
@@ -412,6 +410,15 @@ class AST_CompoundStmt(AST):
 	def __init__(self):
 		self.stmts = []
 
+class AST_EOF(AST):
+	def __init__(self, token):
+		self.token = token
+
+class AST_Program(AST):
+	def __init__(self, content, eof):
+		self.content = content
+		self.eof = eof
+
 class Parser(object):
 	def __init__(self, src, trace=False):
 		self.lexer = Lexer(src)
@@ -465,6 +472,11 @@ class Parser(object):
 		self.eat(LBRACE)
 		stmts = self.compound_stmt()
 		self.eat(RBRACE)
+
+		for i in stmts.stmts:
+			if type(i) == AST_Return:
+				return AST_FunDef(token, args, stmts)
+		stmts.stmts += [AST_Return(token, None)]
 		return AST_FunDef(token, args, stmts)
 
 	# struct_def : STRUCTDEF (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
@@ -673,7 +685,7 @@ class Parser(object):
 	def expr(self):
 		return self.bool_expr()
 
-	# assign_stmt : (variable | attr_ref) ASSIGN expr
+	# assign_stmt : attr_ref ASSIGN expr
 	def assign_stmt(self):
 		expr = self.expr()
 
@@ -760,12 +772,15 @@ class Parser(object):
 		self.eat_space()
 		return AST_If((iftoken, ifcond, ifcompound_stmt), elifs, None)
 
-	# return_stmt : RETURN expr
+	# return_stmt : RETURN [expr]
 	def return_stmt(self):
 		token = self.token
 		self.eat(RETURN)
-		expr = self.expr()
-		return AST_Return(token, expr)
+		self.eat_space()
+		if self.token.type in [INT, FLOAT, NAME, BOOL, STRING, NULL, FUNDEF, STRUCTDEF, LBRACKET, LPAREN]:
+			expr = self.expr()
+			return AST_Return(token, expr)
+		return AST_Return(token, None)
 
 	# while_stmt : WHILE expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE [SPACE]
 	def while_stmt(self):
@@ -796,12 +811,15 @@ class Parser(object):
 		self.eat_space()
 		return AST_For(token, var, expr, content)
 
-	# print_stmt : PRINT expr
+	# print_stmt : PRINT [expr]
 	def print_stmt(self):
 		token = self.token
 		self.eat(PRINT)
-		expr = self.expr()
-		return AST_Print(token, expr)
+		self.eat_space()
+		if self.token.type in [INT, FLOAT, NAME, BOOL, STRING, NULL, FUNDEF, STRUCTDEF, LBRACKET, LPAREN]:
+			expr = self.expr()
+			return AST_Print(token, expr)
+		return AST_Print(token, None)
 
 	# statement : expr | assign_stmt | if_stmt | return_stmt | while_stmt | for_stmt | print_stmt | declaration_stmt
 	def statement(self):
@@ -843,11 +861,12 @@ class Parser(object):
 	# program : compound_stmt EOF
 	def program(self):
 		compound = self.compound_stmt()
+		eof = AST_EOF(self.token)
 		self.eat(EOF)
-		return compound
+		return AST_Program(compound, eof)
 
 	def parse(self):
 		return self.program()
 
 # tree = Parser(open("script.txt", 'r').read(), trace=False).parse()
-# print tree.stmts[0].obj
+# print tree.stmts
