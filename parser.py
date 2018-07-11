@@ -723,9 +723,9 @@ class Parser(object):
 			if self.token.type == SPACE:
 				self.eat(SPACE)
 
-	# if_stmt : IF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE (NEWLINE | SPACE)*
-	#           (ELIF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE (NEWLINE | SPACE)*)* 
-	#           [ELSE (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE] [SPACE]
+	# if_stmt : IF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE 
+	#           ((NEWLINE | SPACE)* ELIF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE)* 
+	#           [(NEWLINE | SPACE)* ELSE (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE] [SPACE]
 	def if_stmt(self):
 		iftoken = self.token
 		self.eat(IF)

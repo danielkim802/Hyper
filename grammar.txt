@@ -36,9 +36,9 @@ assign_stmt : attr_ref ASSIGN expr
 
 declaration_stmt : VAR SPACE variable [ASSIGN expr]
 
-if_stmt : IF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE (NEWLINE | SPACE)*
-          (ELIF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE (NEWLINE | SPACE)*)* 
-          [ELSE (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE]
+if_stmt : IF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE 
+          ((NEWLINE | SPACE)* ELIF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE)* 
+          [(NEWLINE | SPACE)* ELSE (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE] [SPACE]
 
 return_stmt : RETURN [expr]
 

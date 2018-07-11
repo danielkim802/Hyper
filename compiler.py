@@ -3,46 +3,52 @@ import struct
 import time, sys
 
 # opcodes
-AND    = 0x00
-OR     = 0x01
-NOT    = 0x02
-LT     = 0x03
-LTE    = 0x04
-GT     = 0x05
-GTE    = 0x06
-NE     = 0x07
-EQ     = 0x08
-ADD    = 0x09
-SUB    = 0x0A
-MUL    = 0x0B
-DIV    = 0x0C
-PLUS   = 0x0D
-MINUS  = 0x0E
-LOAD_INT = 0x12
-LOAD_FLOAT = 0x13
-LOAD_BOOL = 0x15
-LOAD_NULL = 0x16
-LOAD_STRING = 0x2B
-LOAD_NAME = 0x14
-FUN_CALL = 0x0F
-GET_ATTR = 0x10
-ARR_IDX = 0x11
-MAKE_STRUCT = 0x18
-MAKE_ARR = 0x19
-PUSH_ENV = 0x1A
-POP_ENV = 0x1B
-MAKE_FUN = 0x17
-JMP = 0x2A
-ASSIGN_NAME = 0x1F
-STORE_ARR = 0x1D
-STORE_ATTR = 0x2D
-STORE_NAME = 0x1E
-RETURN = 0x2E
-PUSH_PC = 0x2F
-PRINT = 0x29
-BTRUE = 0x27
-BFALSE = 0x28
-HALT = 0x2C
+AND          = 0x00
+OR           = 0x01
+NOT          = 0x02
+LT           = 0x03
+LTE          = 0x04
+GT           = 0x05
+GTE          = 0x06
+NE           = 0x07
+EQ           = 0x08
+ADD          = 0x09
+SUB          = 0x0A
+MUL          = 0x0B
+DIV          = 0x0C
+PLUS         = 0x0D
+MINUS        = 0x0E
+FUN_CALL     = 0x0F
+GET_ATTR     = 0x10
+ARR_IDX      = 0x11
+
+LOAD_INT     = 0x12
+LOAD_FLOAT   = 0x13
+LOAD_NAME    = 0x14
+LOAD_BOOL    = 0x15
+LOAD_NULL    = 0x16
+LOAD_STRING  = 0x2B
+MAKE_FUN     = 0x17
+MAKE_STRUCT  = 0x18
+MAKE_ARR     = 0x19
+
+PUSH_ENV     = 0x1A
+POP_ENV      = 0x1B
+PUSH_PC      = 0x2F
+
+ASSIGN_NAME  = 0x1F
+STORE_ARR    = 0x1D
+STORE_ATTR   = 0x2D
+STORE_NAME   = 0x1E
+RETURN       = 0x2E
+PRINT        = 0x29
+
+JMP          = 0x2A
+BTRUE        = 0x27
+BFALSE       = 0x28
+HALT         = 0x2C
+
+LEN_ARR      = 0x30
 
 opcodes = {
 	AND        : "and",
@@ -85,6 +91,7 @@ opcodes = {
 	BTRUE      : "btrue",
 	BFALSE     : "bfalse",
 	HALT       : "halt",
+	LEN_ARR    : "len_arr"
 }
 
 class ASTTraverser(object):
@@ -231,12 +238,14 @@ class Compiler(ASTTraverser):
 			self.write_cmd(NOT, node.token)
 
 	def visit_FunCall(self, node):
-		self.write_cmd(PUSH_PC)
+		self.write_cmd(LOAD_INT)
+		addr = self.save(parser.INT)
 		for i in reversed(node.args):
 			self.visit(i)
 		self.visit(node.fun)
 		self.write_cmd(FUN_CALL)
 		self.write_value(parser.INT, len(node.args))
+		self.write_saved(addr, parser.INT, len(self.buffer))
 
 	def visit_AttrRef(self, node):
 		self.visit(node.obj)
@@ -347,14 +356,102 @@ class Compiler(ASTTraverser):
 		for elifjmp in elifjmps:
 			self.write_saved(elifjmp, parser.INT, len(self.buffer))
 
+	def visit_For(self, node):
+		# loop setup
+		self.write_cmd(PUSH_ENV, node.token)
+		self.write_cmd(STORE_NAME, node.var.token)
+		self.write_value(parser.STRING, node.var.name)
+		self.write_cmd(LOAD_INT)
+		self.write_value(parser.INT, 0)
+		self.write_cmd(ASSIGN_NAME)
+		self.write_value(parser.STRING, node.var.name)
+		loop_addr = len(self.buffer)
+
+		# condition check
+		self.write_cmd(LOAD_NAME, node.var.token)
+		self.write_value(parser.STRING, node.var.name)
+		self.visit(node.expr)
+		self.write_cmd(LT)
+		self.write_cmd(BFALSE)
+		end_addr = self.save(parser.INT)
+
+		# body
+		self.visit(node.content)
+
+		# increment counter
+		self.write_cmd(LOAD_INT)
+		self.write_value(parser.INT, 1)
+		self.write_cmd(LOAD_NAME)
+		self.write_value(parser.STRING, node.var.name)
+		self.write_cmd(ADD)
+		self.write_cmd(ASSIGN_NAME)
+		self.write_value(parser.STRING, node.var.name)
+		self.write_cmd(JMP)
+		self.write_value(parser.INT, loop_addr)
+
+		# end of loop
+		self.write_saved(end_addr, parser.INT, len(self.buffer))
+		self.write_cmd(POP_ENV)
+
+	def visit_While(self, node):
+		# setup loop
+		self.write_cmd(PUSH_ENV, node.token)
+		
+		# condition check
+		jmp_addr = len(self.buffer)
+		self.visit(node.condition)
+		self.write_cmd(BFALSE)
+		end_addr = self.save(parser.INT)
+		
+		# body
+		self.visit(node.content)
+		self.write_cmd(JMP)
+		self.write_value(parser.INT, jmp_addr)
+		
+		# end of loop
+		self.write_saved(end_addr, parser.INT, len(self.buffer))
+		self.write_cmd(POP_ENV)
+
 	def visit_EOF(self, node):
 		self.write_cmd(HALT, node.token)
 
 	def visit_Program(self, node):
 		self.write_cmd(PUSH_ENV)
+		ptrs = self.declare_std()
 		self.visit(node.content)
 		self.write_cmd(POP_ENV)
 		self.visit(node.eof)
+		self.write_std(ptrs)
+
+	def declare_std_len_arr(self):
+		self.write_cmd(MAKE_FUN)
+		std_len_arr_ptr = self.save(parser.INT)
+		self.write_value(parser.INT, 1)
+		self.write_value(parser.STRING, "arr")
+		self.write_cmd(STORE_NAME)
+		self.write_value(parser.STRING, "len")
+		self.write_cmd(ASSIGN_NAME)
+		self.write_value(parser.STRING, "len")
+		return std_len_arr_ptr
+
+	def write_std_len_arr(self, ptr):
+		self.write_saved(ptr, parser.INT, len(self.buffer))
+		self.write_cmd(PUSH_ENV)
+		self.write_cmd(LOAD_NAME)
+		self.write_value(parser.STRING, "arr")
+		self.write_cmd(LEN_ARR)
+		self.write_cmd(RETURN)
+
+	def declare_std(self):
+		std_len_arr_ptr = self.declare_std_len_arr()
+		return [std_len_arr_ptr]
+
+	def write_std(self, ptrs):
+		std = [
+			self.write_std_len_arr
+		]
+		for i in range(len(ptrs)):
+			std[i](ptrs[i])
 
 	def compile(self):
 		ast = self.parser.parse()
@@ -555,13 +652,16 @@ class Disassembler(object):
 	def read_halt(self, opcode):
 		pass
 
+	def read_len_arr(self, opcode):
+		pass
+
 	def disassemble(self):
 		while not self.eof():
 			self.read_cmd()
 		return self.text
 
 start = time.time()
-filename = "script2.txt"
+filename = "script.txt"
 Compiler(filename).compile()
 print '[', time.time() - start, ']'
 print Disassembler(filename + ".o").disassemble()
