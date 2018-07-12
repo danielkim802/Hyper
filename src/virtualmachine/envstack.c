@@ -30,6 +30,8 @@ void envstack_pop(struct EnvStack* es, struct Env* env) {
 }
 
 void envstack_free(struct EnvStack* es) {
+	for (uint64_t i = 0; i < es->size; i ++)
+		env_free(&es->envs[i]);
 	free(es->envs);
 }
 

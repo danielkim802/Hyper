@@ -31,5 +31,7 @@ void valuestack_pop(struct ValueStack* vs, struct Value* value) {
 }
 
 void valuestack_free(struct ValueStack* vs) {
+	for (uint64_t i = 0; i < vs->size; i ++)
+		value_free(&vs->values[i]);
 	free(vs->values);
 }

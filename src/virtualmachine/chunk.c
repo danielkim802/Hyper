@@ -70,7 +70,6 @@ uint64_t chunk_get(struct Chunk* chunk, uint8_t* mem) {
 	uint64_t ptr = 0;
 	ptr += read_opcode(chunk, &mem[ptr]);
 	ptr += read_line(chunk, &mem[ptr]);
-
 	switch(chunk->opcode) {
 		// expressions
 		case AND: break;
