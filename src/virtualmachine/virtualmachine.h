@@ -17,4 +17,7 @@ void vm_free(struct VM* vm);
 // executes a single command
 void vm_exec(struct VM* vm);
 
+// runs the vm; stops when it hits halt command
+void vm_run(struct VM* vm);
+
 #endif /* VIRTUALMACHINE_H */

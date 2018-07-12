@@ -14,6 +14,7 @@ struct VM {
 	uint64_t pc;
 	struct ValueStack* valueStack;
 	struct EnvStack* envStack;
+	uint8_t halt;
 };
 
 void exec_and(struct VM* vm, struct Chunk* chunk) {
@@ -641,7 +642,7 @@ void exec_jmp(struct VM* vm, struct Chunk* chunk) {
 }
 
 void exec_halt(struct VM* vm, struct Chunk* chunk) {
-	while (1);
+	vm->halt = 1;
 }
 
 void exec_len_arr(struct VM* vm, struct Chunk* chunk) {
@@ -669,6 +670,7 @@ void vm_init(struct VM* vm, char* filename) {
 	for (uint64_t i = 0; i < filesize; i ++)
 		vm->mainMem[i] = fgetc(f);
 	vm->pc = 0;
+	vm->halt = 0;
 
 	// setup jump table
 	// expressions
@@ -730,6 +732,7 @@ void vm_disassemble(struct VM* vm) {
 		printf("[%5llu] ", vm->pc);
 		struct Chunk chunk;
 		vm->pc += chunk_get(&chunk, &vm->mainMem[vm->pc]);
+		chunk_print(&chunk);
 		chunk_free(&chunk);
 	}
 }
@@ -745,16 +748,19 @@ void vm_free(struct VM* vm) {
 void vm_exec(struct VM* vm) {
 	struct Chunk chunk;
 	vm->pc += chunk_get(&chunk, &vm->mainMem[vm->pc]);
-	chunk_print(&chunk);
 	(*exec_func[chunk.opcode])(vm, &chunk);
 	chunk_free(&chunk);
+}
+
+void vm_run(struct VM* vm) {
+	while (!vm->halt)
+		vm_exec(vm);
 }
 
 int main(void) {
 	struct VM vm;
 	vm_init(&vm, "../../data/test.hyp.o");
-	while (1) {
-		vm_exec(&vm);
-	}
+	vm_run(&vm);
+	vm_free(&vm);
 	return 0;
 }
