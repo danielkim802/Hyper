@@ -238,141 +238,62 @@ void chunk_print(struct Chunk* chunk) {
 
 	switch(chunk->opcode) {
 		// expressions
-		case AND:
-			printf("AND");
-			break;
-		case OR:
-			printf("OR");
-			break;
-		case NOT:
-			printf("NOT");
-			break;
-		case LT:
-			printf("LT");
-			break;
-		case LTE:
-			printf("LTE");
-			break;
-		case GT:
-			printf("GT");
-			break;
-		case GTE:
-			printf("GTE");
-			break;
-		case NE:
-			printf("NE");
-			break;
-		case EQ:
-			printf("EQ");
-			break;
-		case ADD:
-			printf("ADD");
-			break;
-		case SUB:
-			printf("SUB");
-			break;
-		case MUL:
-			printf("MUL");
-			break;
-		case DIV:
-			printf("DIV");
-			break;
-		case PLUS:
-			printf("PLUS");
-			break;
-		case MINUS:
-			printf("MINUS");
-			break;
-		case FUN_CALL:
-			printf("FUN_CALL %llu", chunk->uintArg);
-			break;
-		case GET_ATTR:
-			printf("GET_ATTR %s", chunk->stringArg);
-			break;
-		case ARR_IDX:
-			printf("ARR_IDX");
-			break;
+		case AND: printf("AND"); break;
+		case OR: printf("OR"); break;
+		case NOT: printf("NOT"); break;
+		case LT: printf("LT"); break;
+		case LTE: printf("LTE"); break;
+		case GT: printf("GT"); break;
+		case GTE: printf("GTE"); break;
+		case NE: printf("NE"); break;
+		case EQ: printf("EQ"); break;
+		case ADD: printf("ADD"); break;
+		case SUB: printf("SUB"); break;
+		case MUL: printf("MUL"); break;
+		case DIV: printf("DIV"); break;
+		case PLUS: printf("PLUS"); break;
+		case MINUS: printf("MINUS"); break;
+		case FUN_CALL: printf("FUN_CALL %llu", chunk->uintArg); break;
+		case GET_ATTR: printf("GET_ATTR %s", chunk->stringArg); break;
+		case ARR_IDX: printf("ARR_IDX"); break;
 
 		// literals
-		case LOAD_INT:
-			printf("LOAD_INT %lli", chunk->intArg);
-			break;
-		case LOAD_FLOAT:
-			printf("LOAD_FLOAT %f", chunk->floatArg);
-			break;
-		case LOAD_NAME:
-			printf("LOAD_NAME %s", chunk->stringArg);
-			break;
-		case LOAD_BOOL:
-			printf("LOAD_BOOL %i", (int) chunk->boolArg);
-			break;
-		case LOAD_NULL:
-			printf("LOAD_NULL");
-			break;
-		case LOAD_STRING:
-			printf("LOAD_STRING \'%s\'", chunk->stringArg);
-			break;
+		case LOAD_INT: printf("LOAD_INT %lli", chunk->intArg); break;
+		case LOAD_FLOAT: printf("LOAD_FLOAT %f", chunk->floatArg); break;
+		case LOAD_NAME: printf("LOAD_NAME %s", chunk->stringArg); break;
+		case LOAD_BOOL: printf("LOAD_BOOL %i", (int) chunk->boolArg); break;
+		case LOAD_NULL: printf("LOAD_NULL"); break;
+		case LOAD_STRING: printf("LOAD_STRING \'%s\'", chunk->stringArg); break;
 		case MAKE_FUN:
 			printf("MAKE_FUN %llu %llu ", chunk->uintArgs[0], chunk->uintArgs[1]);
 			for (uint64_t i = 0; i < chunk->uintArgs[1]; i ++)
 				printf("%s ", chunk->stringArgs[i]);
 			break;
-		case MAKE_STRUCT:
-			printf("MAKE_STRUCT");
-			break;
-		case MAKE_ARR:
-			printf("MAKE_ARR %llu", chunk->uintArg);
-			break;
+		case MAKE_STRUCT: printf("MAKE_STRUCT"); break;
+		case MAKE_ARR: printf("MAKE_ARR %llu", chunk->uintArg); break;
 
 		// vm functions
-		case PUSH_ENV:
-			printf("PUSH_ENV");
-			break;
-		case POP_ENV:
-			printf("POP_ENV");
-			break;
+		case PUSH_ENV: printf("PUSH_ENV"); break;
+		case POP_ENV: printf("POP_ENV"); break;
 
 		// statements
-		case ASSIGN_NAME:
-			printf("ASSIGN_NAME %s", chunk->stringArg);
-			break;
-		case STORE_ARR:
-			printf("STORE_ARR");
-			break;
-		case STORE_ATTR:
-			printf("STORE_ATTR %s", chunk->stringArg);
-			break;
-		case STORE_NAME:
-			printf("STORE_NAME %s", chunk->stringArg);
-			break;
-		case RETURN:
-			printf("RETURN");
-			break;
-		case PRINT:
-			printf("PRINT");
-			break;
+		case ASSIGN_NAME: printf("ASSIGN_NAME %s", chunk->stringArg); break;
+		case STORE_ARR: printf("STORE_ARR"); break;
+		case STORE_ATTR: printf("STORE_ATTR %s", chunk->stringArg); break;
+		case STORE_NAME: printf("STORE_NAME %s", chunk->stringArg); break;
+		case RETURN: printf("RETURN"); break;
+		case PRINT: printf("PRINT"); break;
 
 		// control
-		case BTRUE:
-			printf("BTRUE %llu", chunk->uintArg);
-			break;
-		case BFALSE:
-			printf("BFALSE %llu", chunk->uintArg);
-			break;
-		case JMP:
-			printf("JMP %llu", chunk->uintArg);
-			break;
-		case HALT:
-			printf("HALT");
-			break;
+		case BTRUE: printf("BTRUE %llu", chunk->uintArg); break;
+		case BFALSE: printf("BFALSE %llu", chunk->uintArg); break;
+		case JMP: printf("JMP %llu", chunk->uintArg); break;
+		case HALT: printf("HALT"); break;
 
 		// library functions
-		case LEN_ARR:
-			printf("LEN_ARR");
-			break;
+		case LEN_ARR: printf("LEN_ARR"); break;
 
-		default:
-			printf("!!UNKNOWN_FUNC");
+		default: printf("!!UNKNOWN_FUNC");
 	}
 
 	printf("\n");

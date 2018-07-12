@@ -1,3 +1,6 @@
+#ifndef OPCODE_H
+#define OPCODE_H
+
 #include <stdint.h>
 
 // expressions
@@ -51,3 +54,5 @@ const uint8_t HALT        = 0x26;
 
 // library functions
 const uint8_t LEN_ARR     = 0x27;
+
+#endif /* OPCODE_H */

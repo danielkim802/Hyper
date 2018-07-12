@@ -1,3 +1,6 @@
+#ifndef CHUNK_H
+#define CHUNK_H
+
 #include <stdint.h>
 
 struct Chunk {
@@ -22,3 +25,5 @@ void chunk_free(struct Chunk* chunk);
 
 // prints chunk
 void chunk_print(struct Chunk* chunk);
+
+#endif /* CHUNK_H */

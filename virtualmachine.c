@@ -21,6 +21,7 @@ int vm_init(struct VM* vm, char* filename) {
 }
 
 void vm_disassemble(struct VM* vm) {
+	printf("[%llu bytes read]\n", vm->mainMemSize);
 	while (vm->pc < vm->mainMemSize) {
 		printf("[%5llu] ", vm->pc);
 		struct Chunk chunk;

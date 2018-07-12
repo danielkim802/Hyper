@@ -1,3 +1,6 @@
+#ifndef VIRTUALMACHINE_H
+#define VIRTUALMACHINE_H
+
 #include <stdint.h>
 
 enum Type {
@@ -31,3 +34,5 @@ int vm_init(struct VM* vm, char* filename);
 
 // disassembles and prints bytecode
 void vm_disassemble(struct VM* vm);
+
+#endif /* VIRTUALMACHINE_H */
