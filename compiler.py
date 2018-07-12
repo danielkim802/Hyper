@@ -3,95 +3,85 @@ import struct
 import time, sys
 
 # opcodes
-AND          = 0x00
-OR           = 0x01
-NOT          = 0x02
-LT           = 0x03
-LTE          = 0x04
-GT           = 0x05
-GTE          = 0x06
-NE           = 0x07
-EQ           = 0x08
-ADD          = 0x09
-SUB          = 0x0A
-MUL          = 0x0B
-DIV          = 0x0C
-PLUS         = 0x0D
-MINUS        = 0x0E
-FUN_CALL     = 0x0F
-GET_ATTR     = 0x10
-ARR_IDX      = 0x11
+# expressions
+AND         = 0x00
+OR          = 0x01
+NOT         = 0x02
+LT          = 0x03
+LTE         = 0x04
+GT          = 0x05
+GTE         = 0x06
+NE          = 0x07
+EQ          = 0x08
+ADD         = 0x09
+SUB         = 0x0A
+MUL         = 0x0B
+DIV         = 0x0C
+PLUS        = 0x0D
+MINUS       = 0x0E
+FUN_CALL    = 0x0F
+GET_ATTR    = 0x10
+ARR_IDX     = 0x11
 
-LOAD_INT     = 0x12
-LOAD_FLOAT   = 0x13
-LOAD_NAME    = 0x14
-LOAD_BOOL    = 0x15
-LOAD_NULL    = 0x16
-LOAD_STRING  = 0x2B
-MAKE_FUN     = 0x17
-MAKE_STRUCT  = 0x18
-MAKE_ARR     = 0x19
+# literals
+LOAD_INT    = 0x12
+LOAD_FLOAT  = 0x13
+LOAD_NAME   = 0x14
+LOAD_BOOL   = 0x15
+LOAD_NULL   = 0x16
+LOAD_STRING = 0x17
+MAKE_FUN    = 0x18
+MAKE_STRUCT = 0x19
+MAKE_ARR    = 0x1A
 
-PUSH_ENV     = 0x1A
-POP_ENV      = 0x1B
-PUSH_PC      = 0x2F
+# vm functions
+PUSH_ENV    = 0x1B
+POP_ENV     = 0x1C
 
-ASSIGN_NAME  = 0x1F
-STORE_ARR    = 0x1D
-STORE_ATTR   = 0x2D
-STORE_NAME   = 0x1E
-RETURN       = 0x2E
-PRINT        = 0x29
+# statements
+ASSIGN_NAME = 0x1D
+STORE_ARR   = 0x1E
+STORE_ATTR  = 0x1F
+STORE_NAME  = 0x20
+RETURN      = 0x21
+PRINT       = 0x22
 
-JMP          = 0x2A
-BTRUE        = 0x27
-BFALSE       = 0x28
-HALT         = 0x2C
+# control
+BTRUE       = 0x23
+BFALSE      = 0x24
+JMP         = 0x25
+HALT        = 0x26
 
-LEN_ARR      = 0x30
+# library functions
+LEN_ARR     = 0x27
 
 opcodes = {
-	AND        : "and",
-	OR         : "or",
-	NOT        : "not",
-	LT         : "lt",
-	LTE        : "lte",
-	GT         : "gt",
-	GTE        : "gte",
-	NE         : "ne",
-	EQ         : "eq",
-	ADD        : "add",
-	SUB        : "sub",
-	MUL        : "mul",
-	DIV        : "div",
-	PLUS       : "plus",
-	MINUS      : "minus",
-	LOAD_INT   : "load_int",
-	LOAD_FLOAT : "load_float",
-	LOAD_BOOL  : "load_bool",
-	LOAD_NULL  : "load_null",
-	LOAD_STRING: "load_string",
-	LOAD_NAME  : "load_name",
-	FUN_CALL   : "fun_call",
-	GET_ATTR   : "get_attr",
-	ARR_IDX    : "arr_idx",
-	MAKE_ARR   : "make_arr",
-	MAKE_STRUCT: "make_struct",
-	PUSH_ENV   : "push_env",
-	POP_ENV    : "pop_env",
-	MAKE_FUN   : "make_fun",
-	JMP        : "jmp",
-	ASSIGN_NAME: "assign_name",
-	STORE_ARR  : "store_arr",
-	STORE_ATTR : "store_attr",
-	STORE_NAME : "store_name",
-	RETURN     : "return",
-	PUSH_PC    : "push_pc",
-	PRINT      : "print",
-	BTRUE      : "btrue",
-	BFALSE     : "bfalse",
-	HALT       : "halt",
-	LEN_ARR    : "len_arr"
+	# expressions
+	AND         : "and",         OR          : "or",          NOT         : "not", 
+	LT          : "lt",          LTE         : "lte",         GT          : "gt",  
+	GTE         : "gte",         NE          : "ne",          EQ          : "eq",       
+	ADD         : "add",         SUB         : "sub",         MUL         : "mul",      
+	DIV         : "div",         PLUS        : "plus",        MINUS       : "minus", 
+	FUN_CALL    : "fun_call",    GET_ATTR    : "get_attr",    ARR_IDX     : "arr_idx",
+
+	# literals
+	LOAD_INT    : "load_int",    LOAD_FLOAT  : "load_float",  LOAD_NAME   : "load_name", 
+	LOAD_BOOL   : "load_bool",   LOAD_NULL   : "load_null",   LOAD_STRING : "load_string",
+	MAKE_FUN    : "make_fun",    MAKE_STRUCT : "make_struct", MAKE_ARR    : "make_arr",
+
+	# vm functions
+	PUSH_ENV    : "push_env",    POP_ENV     : "pop_env",
+
+	# statements
+	ASSIGN_NAME : "assign_name", STORE_ARR   : "store_arr",   STORE_ATTR  : "store_attr",
+	STORE_NAME  : "store_name",  RETURN      : "return",      PRINT       : "print",
+
+	# control
+	BTRUE       : "btrue",       BFALSE      : "bfalse",
+	JMP         : "jmp",         HALT        : "halt",
+
+	# library functions
+	LEN_ARR     : "len_arr"
 }
 
 class ASTTraverser(object):
@@ -110,6 +100,10 @@ class Compiler(ASTTraverser):
 		self.parser = parser.Parser(text)
 		self.buffer = bytearray()
 		self.line = 1
+		self.warnings = ""
+
+	def warning(self, msg):
+		self.warnings += "line %i [Warning]: " % self.line + msg + '\n'
 
 	def save(self, type):
 		pos = len(self.buffer)
@@ -125,7 +119,14 @@ class Compiler(ASTTraverser):
 		if type == parser.FLOAT:
 			typ = 'd'
 		elif type == parser.INT:
-			typ = 'd'
+			typ = 'Q'
+
+			if obj > 0xFFFFFFFFFFFFFFFF:
+				self.warning("Integer overflow")
+			elif obj >= (1 << 63):
+				self.warning("Integer overflow")
+
+			obj &= 0xFFFFFFFFFFFFFFFF
 		elif type == parser.BOOL:
 			typ = 'c'
 		elif type == parser.STRING:
@@ -147,7 +148,17 @@ class Compiler(ASTTraverser):
 		if type == parser.FLOAT:
 			typ = 'd'
 		elif type == parser.INT:
-			typ = 'd'
+			typ = 'Q'
+
+			sign = (obj >> 63) & 1
+			newobj = obj & 0xFFFFFFFFFFFFFFFF
+			newobj = newobj - 2 ** 64 if sign else newobj
+			if obj > 0xFFFFFFFFFFFFFFFF:
+				self.warning("Integer overflow (%i -> %i)" % (obj, newobj))
+			elif obj >= (1 << 63):
+				self.warning("Integer overflow (%i -> %i)" % (obj, newobj))
+
+			obj &= 0xFFFFFFFFFFFFFFFF
 		elif type == parser.BOOL:
 			typ = 'c'
 		elif type == parser.STRING:
@@ -456,6 +467,8 @@ class Compiler(ASTTraverser):
 	def compile(self):
 		ast = self.parser.parse()
 		self.visit(ast)
+		if self.warnings:
+			print self.warnings
 		file = open(self.file + '.o', 'w')
 		file.write(self.buffer)
 
@@ -477,8 +490,17 @@ class Disassembler(object):
 	def eof(self):
 		return self.byte is None
 
+	def get_byte(self):
+		return ord(self.get())
+
 	def get_int(self):
-		return int(self.get_float())
+		res = bytearray()
+		for i in range(8):
+			if self.eof():
+				self.error()
+			res += self.get()
+
+		return struct.unpack('q', res)[0]
 
 	def get_float(self):
 		res = bytearray()
@@ -512,106 +534,93 @@ class Disassembler(object):
 	def read_cmd(self):
 		global opcodes
 		pos = self.ptr
-		byte = ord(self.get())
-		cmd = opcodes[byte]
+		cmd = opcodes[self.get_byte()]
 		line = self.get_int()
-		func = getattr(self, "read_" + cmd, self.read_error)
 		self.text += "[" + str(pos) + "] " + str(line) + " " + cmd + " "
-		func(byte)
+		getattr(self, "read_" + cmd, self.read_error)()
 		self.text += '\n'
 
-	def read_add(self, opcode):
+	# expressions
+	def read_and(self):
 		pass
 
-	def read_sub(self, opcode):
+	def read_or(self):
 		pass
 
-	def read_mul(self, opcode):
+	def read_not(self):
 		pass
 
-	def read_div(self, opcode):
+	def read_lt(self):
 		pass
 
-	def read_load_int(self, opcode):
+	def read_lte(self):
+		pass
+
+	def read_gt(self):
+		pass
+
+	def read_gte(self):
+		pass
+
+	def read_ne(self):
+		pass
+
+	def read_eq(self):
+		pass
+
+	def read_add(self):
+		pass
+
+	def read_sub(self):
+		pass
+
+	def read_mul(self):
+		pass
+
+	def read_div(self):
+		pass
+
+	def read_plus(self):
+		pass
+
+	def read_minus(self):
+		pass
+
+	def read_fun_call(self):
+		args = self.get_int()
+		self.text += str(args)
+
+	def read_get_attr(self):
+		name = self.get_string()
+		self.text += name
+
+	def read_arr_idx(self):
+		pass
+
+	# literals
+	def read_load_int(self):
 		i = self.get_int()
 		self.text += str(i)
 
-	def read_load_float(self, opcode):
+	def read_load_float(self):
 		f = self.get_float()
 		self.text += str(f)
 
-	def read_load_bool(self, opcode):
+	def read_load_name(self):
+		self.text += self.get_string()
+
+	def read_load_bool(self):
 		b = ord(self.get())
 		val = 'true' if b == 1 else 'false'
 		self.text += val
 
-	def read_load_name(self, opcode):
-		self.text += self.get_string()
-
-	def read_load_null(self, opcode):
+	def read_load_null(self):
 		pass
 
-	def read_load_string(self, opcode):
-		self.text += self.get_string()
+	def read_load_string(self):
+		self.text += "'" + self.get_string() + "'"
 
-	def read_lt(self, opcode):
-		pass
-
-	def read_lte(self, opcode):
-		pass
-
-	def read_gt(self, opcode):
-		pass
-
-	def read_gte(self, opcode):
-		pass
-
-	def read_ne(self, opcode):
-		pass
-
-	def read_eq(self, opcode):
-		pass
-
-	def read_plus(self, opcode):
-		pass
-
-	def read_minus(self, opcode):
-		pass
-
-	def read_not(self, opcode):
-		pass
-
-	def read_and(self, opcode):
-		pass
-
-	def read_or(self, opcode):
-		pass
-
-	def read_fun_call(self, opcode):
-		args = self.get_int()
-		self.text += str(args)
-
-	def read_get_attr(self, opcode):
-		name = self.get_string()
-		self.text += name
-
-	def read_arr_idx(self, opcode):
-		pass
-
-	def read_make_arr(self, opcode):
-		length = self.get_int()
-		self.text += str(length)
-
-	def read_make_struct(self, opcode):
-		pass
-
-	def read_push_env(self, opcode):
-		pass
-
-	def read_pop_env(self, opcode):
-		pass
-
-	def read_make_fun(self, opcode):
+	def read_make_fun(self):
 		ptr = self.get_int()
 		args = self.get_int()
 		names = ""
@@ -619,40 +628,54 @@ class Disassembler(object):
 			names += self.get_string() + " "
 		self.text += str(ptr) + " " + str(args) + " " + names
 
-	def read_jmp(self, opcode):
-		self.text += str(self.get_int())
+	def read_make_struct(self):
+		pass
 
-	def read_assign_name(self, opcode):
+	def read_make_arr(self):
+		length = self.get_int()
+		self.text += str(length)
+
+	# vm functions
+	def read_push_env(self):
+		pass
+
+	def read_pop_env(self):
+		pass
+
+	# statements
+	def read_assign_name(self):
 		self.text += self.get_string()
 
-	def read_store_arr(self, opcode):
+	def read_store_arr(self):
 		pass
 
-	def read_store_attr(self, opcode):
+	def read_store_attr(self):
 		self.text += self.get_string()
 
-	def read_store_name(self, opcode):
+	def read_store_name(self):
 		self.text += self.get_string()
 
-	def read_push_pc(self, opcode):
+	def read_return(self):
 		pass
 
-	def read_return(self, opcode):
+	def read_print(self):
 		pass
 
-	def read_print(self, opcode):
-		pass
-
-	def read_btrue(self, opcode):
+	# control
+	def read_btrue(self):
 		self.text += str(self.get_int())
 
-	def read_bfalse(self, opcode):
+	def read_bfalse(self):
 		self.text += str(self.get_int())
 
-	def read_halt(self, opcode):
+	def read_jmp(self):
+		self.text += str(self.get_int())
+
+	def read_halt(self):
 		pass
 
-	def read_len_arr(self, opcode):
+	# library functions
+	def read_len_arr(self):
 		pass
 
 	def disassemble(self):
