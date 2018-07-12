@@ -683,8 +683,8 @@ class Disassembler(object):
 			self.read_cmd()
 		return self.text
 
-start = time.time()
-filename = "script.txt"
-Compiler(filename).compile()
-print '[', time.time() - start, ']'
-print Disassembler(filename + ".o").disassemble()
+# start = time.time()
+# filename = "script.txt"
+# Compiler(filename).compile()
+# print '[', time.time() - start, ']'
+# print Disassembler(filename + ".o").disassemble()
