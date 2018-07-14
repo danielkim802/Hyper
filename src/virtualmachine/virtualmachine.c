@@ -7,26 +7,16 @@
 #include "value.h"
 #include "valuestack.h"
 #include "envstack.h"
+#include "vmerror.h"
 
-struct VM {
-	uint8_t* mainMem;
-	uint64_t mainMemSize;
-	struct ValueStack* valueStack;
-	struct EnvStack* envStack;
-	uint64_t pc;
-	uint8_t halt;
-	uint8_t debug;
-};
-
-void exec_and(struct VM* vm, struct Chunk* chunk) {
+void exec_and(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
-	if (value1.type != BOOL || value2.type != BOOL) {
-		// raise type error
-	}
+	if (value1.type != BOOL || value2.type != BOOL)
+		vmerror_raise(TYPE_ERROR, "Unsupported operand types for 'and' operator");
 
 	struct Value res;
 	res.type = BOOL;
@@ -36,15 +26,14 @@ void exec_and(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value2);
 }
 
-void exec_or(struct VM* vm, struct Chunk* chunk) {
+void exec_or(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
-	if (value1.type != BOOL || value2.type != BOOL) {
-		// raise type error
-	}
+	if (value1.type != BOOL || value2.type != BOOL)
+		vmerror_raise(TYPE_ERROR, "Unsupported operand types for 'or' operator");
 
 	struct Value res;
 	res.type = BOOL;
@@ -54,13 +43,12 @@ void exec_or(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value2);
 }
 
-void exec_not(struct VM* vm, struct Chunk* chunk) {
+void exec_not(struct VM* vm) {
 	struct Value value;
 	valuestack_pop(vm->valueStack, &value);
 
-	if (value.type != BOOL) {
-		// raise type error
-	}
+	if (value.type != BOOL)
+		vmerror_raise(TYPE_ERROR, "Unsupported operand types for 'not' operator");
 
 	struct Value res;
 	res.type = BOOL;
@@ -69,16 +57,15 @@ void exec_not(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value);
 }
 
-void exec_lt(struct VM* vm, struct Chunk* chunk) {
+void exec_lt(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT)) {
-		// raise type error
-	}
+		(value2.type != INT && value2.type != FLOAT))
+		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '<' operator");
 
 	struct Value res;
 	res.type = BOOL;
@@ -105,16 +92,15 @@ void exec_lt(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value2);
 }
 
-void exec_lte(struct VM* vm, struct Chunk* chunk) {
+void exec_lte(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT)) {
-		// raise type error
-	}
+		(value2.type != INT && value2.type != FLOAT))
+		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '<=' operator");
 
 	struct Value res;
 	res.type = BOOL;
@@ -141,16 +127,15 @@ void exec_lte(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value2);
 }
 
-void exec_gt(struct VM* vm, struct Chunk* chunk) {
+void exec_gt(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT)) {
-		// raise type error
-	}
+		(value2.type != INT && value2.type != FLOAT))
+		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '>' operator");
 
 	struct Value res;
 	res.type = BOOL;
@@ -177,16 +162,15 @@ void exec_gt(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value2);
 }
 
-void exec_gte(struct VM* vm, struct Chunk* chunk) {
+void exec_gte(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT)) {
-		// raise type error
-	}
+		(value2.type != INT && value2.type != FLOAT))
+		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '>=' operator");
 
 	struct Value res;
 	res.type = BOOL;
@@ -213,7 +197,7 @@ void exec_gte(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value2);
 }
 
-void exec_ne(struct VM* vm, struct Chunk* chunk) {
+void exec_ne(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
 	valuestack_pop(vm->valueStack, &value1);
@@ -255,7 +239,7 @@ void exec_ne(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value2);
 }
 
-void exec_eq(struct VM* vm, struct Chunk* chunk) {
+void exec_eq(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
 	valuestack_pop(vm->valueStack, &value1);
@@ -297,18 +281,16 @@ void exec_eq(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value2);
 }
 
-void exec_add(struct VM* vm, struct Chunk* chunk) {
+void exec_add(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
 	valuestack_pop(vm->valueStack, &value2);
 	valuestack_pop(vm->valueStack, &value1);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT)) {
-		if (!(value1.type == STRING && value2.type == STRING)) {
-			// raise type error
-		}
-	}
+		(value2.type != INT && value2.type != FLOAT))
+		if (!(value1.type == STRING && value2.type == STRING))
+			vmerror_raise(TYPE_ERROR, "Unsupported operand types for '+' operator");
 
 	struct Value res;
 	switch (value1.type) {
@@ -359,16 +341,15 @@ void exec_add(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value2);
 }
 
-void exec_sub(struct VM* vm, struct Chunk* chunk) {
+void exec_sub(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
 	valuestack_pop(vm->valueStack, &value2);
 	valuestack_pop(vm->valueStack, &value1);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT)) {
-		// raise type error
-	}
+		(value2.type != INT && value2.type != FLOAT))
+		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '-' operator");
 
 	struct Value res;
 	switch (value1.type) {
@@ -408,16 +389,15 @@ void exec_sub(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value2);
 }
 
-void exec_mul(struct VM* vm, struct Chunk* chunk) {
+void exec_mul(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
 	valuestack_pop(vm->valueStack, &value2);
 	valuestack_pop(vm->valueStack, &value1);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT)) {
-		// raise type error
-	}
+		(value2.type != INT && value2.type != FLOAT))
+		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '*' operator");
 
 	struct Value res;
 	switch (value1.type) {
@@ -457,16 +437,15 @@ void exec_mul(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value2);
 }
 
-void exec_div(struct VM* vm, struct Chunk* chunk) {
+void exec_div(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
 	valuestack_pop(vm->valueStack, &value2);
 	valuestack_pop(vm->valueStack, &value1);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT)) {
-		// raise type error
-	}
+		(value2.type != INT && value2.type != FLOAT))
+		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '/' operator");
 
 	struct Value res;
 	switch (value1.type) {
@@ -506,13 +485,12 @@ void exec_div(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value2);
 }
 
-void exec_plus(struct VM* vm, struct Chunk* chunk) {
+void exec_plus(struct VM* vm) {
 	struct Value value;
 	valuestack_pop(vm->valueStack, &value);
 
-	if (value.type != INT && value.type != FLOAT) {
-		// raise type error
-	}
+	if (value.type != INT && value.type != FLOAT)
+		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '+' operator");
 
 	struct Value res;
 	switch (value.type) {
@@ -531,13 +509,12 @@ void exec_plus(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value);
 }
 
-void exec_minus(struct VM* vm, struct Chunk* chunk) {
+void exec_minus(struct VM* vm) {
 	struct Value value;
 	valuestack_pop(vm->valueStack, &value);
 
-	if (value.type != INT && value.type != FLOAT) {
-		// raise type error
-	}
+	if (value.type != INT && value.type != FLOAT)
+		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '-' operator");
 
 	struct Value res;
 	switch (value.type) {
@@ -556,32 +533,28 @@ void exec_minus(struct VM* vm, struct Chunk* chunk) {
 	value_free(&value);
 }
 
-void exec_fun_call(struct VM* vm, struct Chunk* chunk) {
+void exec_fun_call(struct VM* vm) {
 
 }
 
-void exec_get_attr(struct VM* vm, struct Chunk* chunk) {
+void exec_get_attr(struct VM* vm) {
 
 }
 
-void exec_arr_idx(struct VM* vm, struct Chunk* chunk) {
+void exec_arr_idx(struct VM* vm) {
 	struct Value arr;
 	struct Value idx;
 	valuestack_pop(vm->valueStack, &idx);
 	valuestack_pop(vm->valueStack, &arr);
 
-	if (arr.type != ARR && arr.type != STRING) {
-		// raise array type error
-	}
-	if (idx.type != INT) {
-		// raise array idx error
-	}
-	if (arr.type == ARR && idx.intValue >= arr.arrLen) {
-		// raise array idx error
-	}
-	if (arr.type == STRING && idx.intValue >= arr.stringLen) {
-		// raise string idx error
-	}
+	if (arr.type != ARR && arr.type != STRING)
+		vmerror_raise(TYPE_ERROR, "Unsupported operand type for '[ ]' operator");
+	if (idx.type != INT) 
+		vmerror_raise(INDEX_ERROR, "Index must be an integer");
+	if (arr.type == ARR && (idx.intValue >= arr.arrLen || idx.intValue < 0))
+		vmerror_raise(INDEX_ERROR, "Index out of range");
+	if (arr.type == STRING && (idx.intValue >= arr.stringLen || idx.intValue < 0))
+		vmerror_raise(INDEX_ERROR, "Index out of range");
 
 	if (arr.type == ARR) {
 		valuestack_push(vm->valueStack, &arr.arrValue[idx.intValue]);
@@ -595,65 +568,65 @@ void exec_arr_idx(struct VM* vm, struct Chunk* chunk) {
 	valuestack_push(vm->valueStack, &str);
 }
 
-void exec_load_int(struct VM* vm, struct Chunk* chunk) {
+void exec_load_int(struct VM* vm) {
 	struct Value value;
 	value.type = INT;
-	value.intValue = chunk->intArg;
+	value.intValue = vm->chunk->intArg;
 	valuestack_push(vm->valueStack, &value);
 }
 
-void exec_load_float(struct VM* vm, struct Chunk* chunk) {
+void exec_load_float(struct VM* vm) {
 	struct Value value;
 	value.type = FLOAT;
-	value.floatValue = chunk->floatArg;
+	value.floatValue = vm->chunk->floatArg;
 	valuestack_push(vm->valueStack, &value);
 }
 
-void exec_load_name(struct VM* vm, struct Chunk* chunk) {
+void exec_load_name(struct VM* vm) {
 	struct Value value;
-	envstack_loadName(vm->envStack, chunk->stringArg, &value);
+	envstack_loadName(vm->envStack, vm->chunk->stringArg, &value);
 	valuestack_push(vm->valueStack, &value);
 }
 
-void exec_load_bool(struct VM* vm, struct Chunk* chunk) {
+void exec_load_bool(struct VM* vm) {
 	struct Value value;
 	value.type = BOOL;
-	value.boolValue = chunk->boolArg;
+	value.boolValue = vm->chunk->boolArg;
 	valuestack_push(vm->valueStack, &value);
 }
 
-void exec_load_null(struct VM* vm, struct Chunk* chunk) {
+void exec_load_null(struct VM* vm) {
 	struct Value value;
 	value.type = NIL;
 	valuestack_push(vm->valueStack, &value);
 }
 
-void exec_load_string(struct VM* vm, struct Chunk* chunk) {
+void exec_load_string(struct VM* vm) {
 	struct Value value;
 	value.type = STRING;
-	value.stringValue = chunk->stringArg;
+	value.stringValue = vm->chunk->stringArg;
 	value.stringLen = strlen((char*) value.stringValue);
 	valuestack_push(vm->valueStack, &value);
 }
 
-void exec_make_fun(struct VM* vm, struct Chunk* chunk) {
+void exec_make_fun(struct VM* vm) {
 	struct Value value;
 	value.type = FUN;
-	value.funValue = chunk->uintArgs[0];
-	value.funArgc = chunk->uintArgs[1];
-	value.funArgs = chunk->stringArgs;
-	free(chunk->uintArgs);
+	value.funValue = vm->chunk->uintArgs[0];
+	value.funArgc = vm->chunk->uintArgs[1];
+	value.funArgs = vm->chunk->stringArgs;
+	free(vm->chunk->uintArgs);
 	valuestack_push(vm->valueStack, &value);
 }
 
-void exec_make_struct(struct VM* vm, struct Chunk* chunk) {
+void exec_make_struct(struct VM* vm) {
 
 }
 
-void exec_make_arr(struct VM* vm, struct Chunk* chunk) {
+void exec_make_arr(struct VM* vm) {
 	struct Value value;
 	value.type = ARR;
-	value.arrLen = chunk->uintArg;
+	value.arrLen = vm->chunk->uintArg;
 
 	uint64_t max = 1;
 	while (max < value.arrLen)
@@ -666,37 +639,50 @@ void exec_make_arr(struct VM* vm, struct Chunk* chunk) {
 	valuestack_push(vm->valueStack, &value);
 }
 
-void exec_push_env(struct VM* vm, struct Chunk* chunk) {
+void exec_push_env(struct VM* vm) {
 	struct Env env;
 	env_init(&env);
 	envstack_push(vm->envStack, &env);
 }
 
-void exec_pop_env(struct VM* vm, struct Chunk* chunk) {
+void exec_pop_env(struct VM* vm) {
 	struct Env env;
 	envstack_pop(vm->envStack, &env);
 }
 
-void exec_assign_name(struct VM* vm, struct Chunk* chunk) {
+void exec_assign_name(struct VM* vm) {
 	struct Value value;
 	valuestack_pop(vm->valueStack, &value);
-	envstack_assignName(vm->envStack, chunk->stringArg, &value);
-	// printf("%i\n", vm->envStack->envs[vm->envStack->size - 1].head->children[0].children[0].children[0].value->type);
+	envstack_assignName(vm->envStack, vm->chunk->stringArg, &value);
 }
 
-void exec_store_arr(struct VM* vm, struct Chunk* chunk) {
+void exec_store_arr(struct VM* vm) {
+	struct Value value;
+	struct Value idx;
+	struct Value arr;
+	valuestack_pop(vm->valueStack, &arr);
+	valuestack_pop(vm->valueStack, &idx);
+	valuestack_pop(vm->valueStack, &value);
+
+	if (arr.type != ARR && arr.type != STRING)
+		vmerror_raise(TYPE_ERROR, "Unsupported operand type for '[ ]' operator");
+	if (idx.type != INT)
+		vmerror_raise(INDEX_ERROR, "Index must be an integer");
+	if (idx.intValue >= arr.arrLen || idx.intValue < 0)
+		vmerror_raise(INDEX_ERROR, "Index out of range");
+
+	arr.arrValue[idx.intValue] = value;
+}
+
+void exec_store_attr(struct VM* vm) {
 
 }
 
-void exec_store_attr(struct VM* vm, struct Chunk* chunk) {
-
+void exec_store_name(struct VM* vm) {
+	envstack_storeName(vm->envStack, vm->chunk->stringArg);
 }
 
-void exec_store_name(struct VM* vm, struct Chunk* chunk) {
-	envstack_storeName(vm->envStack, chunk->stringArg);
-}
-
-void exec_return(struct VM* vm, struct Chunk* chunk) {
+void exec_return(struct VM* vm) {
 
 }
 
@@ -740,7 +726,7 @@ void exec_print_helper(struct Value* value) {
 	}
 }
 
-void exec_print(struct VM* vm, struct Chunk* chunk) {
+void exec_print(struct VM* vm) {
 	struct Value value;
 	valuestack_peek(vm->valueStack, &value);
 
@@ -748,45 +734,43 @@ void exec_print(struct VM* vm, struct Chunk* chunk) {
 	printf("\n");
 }
 
-void exec_btrue(struct VM* vm, struct Chunk* chunk) {
+void exec_btrue(struct VM* vm) {
 	struct Value value;
 	valuestack_pop(vm->valueStack, &value);
 
-	if (value.type != BOOL) {
-		// raise type error
-	}
+	if (value.type != BOOL)
+		vmerror_raise(TYPE_ERROR, "!!Unsupported operand type for [btrue]");
 
 	if (!value.boolValue)
 		return;
-	vm->pc = chunk->uintArg;
+	vm->pc = vm->chunk->uintArg;
 }
 
-void exec_bfalse(struct VM* vm, struct Chunk* chunk) {
+void exec_bfalse(struct VM* vm) {
 	struct Value value;
 	valuestack_pop(vm->valueStack, &value);
 
-	if (value.type != BOOL) {
-		// raise type error
-	}
+	if (value.type != BOOL)
+		vmerror_raise(TYPE_ERROR, "!!Unsupported operand type for [bfalse]");
 
 	if (value.boolValue)
 		return;
-	vm->pc = chunk->uintArg;
+	vm->pc = vm->chunk->uintArg;
 }
 
-void exec_jmp(struct VM* vm, struct Chunk* chunk) {
-	vm->pc = chunk->uintArg;
+void exec_jmp(struct VM* vm) {
+	vm->pc = vm->chunk->uintArg;
 }
 
-void exec_halt(struct VM* vm, struct Chunk* chunk) {
+void exec_halt(struct VM* vm) {
 	vm->halt = 1;
 }
 
-void exec_len_arr(struct VM* vm, struct Chunk* chunk) {
+void exec_len_arr(struct VM* vm) {
 
 }
 
-void (*exec_func[0x28]) (struct VM* vm, struct Chunk* chunk);
+void (*exec_func[0x28]) (struct VM* vm);
 
 void vm_init(struct VM* vm, char* filename) {
 	// setup stacks
@@ -862,6 +846,9 @@ void vm_init(struct VM* vm, char* filename) {
 
 	// library functions
 	exec_func[LEN_ARR]     = exec_len_arr;
+
+	// setup error
+	vmerror_vm = vm;
 }
 
 void vm_printValueStack(struct VM* vm) {
@@ -879,9 +866,10 @@ void vm_disassemble(struct VM* vm) {
 	while (vm->pc < vm->mainMemSize) {
 		printf("[%5llu] ", vm->pc);
 		struct Chunk chunk;
-		vm->pc += chunk_get(&chunk, &vm->mainMem[vm->pc]);
-		chunk_print(&chunk);
-		chunk_free(&chunk);
+		vm->chunk = &chunk;
+		vm->pc += chunk_get(vm->chunk, &vm->mainMem[vm->pc]);
+		chunk_print(vm->chunk);
+		chunk_free(vm->chunk);
 	}
 }
 
@@ -894,13 +882,14 @@ void vm_free(struct VM* vm) {
 }
 
 void vm_exec(struct VM* vm) {
-	struct Chunk chunk;
 	if (vm->debug)
 		printf("[%5llu] ", vm->pc);
-	vm->pc += chunk_get(&chunk, &vm->mainMem[vm->pc]);
+	struct Chunk chunk;
+	vm->chunk = &chunk;
+	vm->pc += chunk_get(vm->chunk, &vm->mainMem[vm->pc]);
 	if (vm->debug)
-		chunk_print(&chunk);
-	(*exec_func[chunk.opcode])(vm, &chunk);
+		chunk_print(vm->chunk);
+	(*exec_func[vm->chunk->opcode])(vm);
 }
 
 void vm_run(struct VM* vm) {
@@ -911,7 +900,7 @@ void vm_run(struct VM* vm) {
 int main(int argc, char* argv[]) {
 	struct VM vm;
 	vm_init(&vm, "../../data/test.hypc");
-	vm.debug = 1;
+	vm.debug = 0;
 	vm_run(&vm);
 	vm_free(&vm);
 	return 0;

@@ -1,6 +1,7 @@
 #include <stdlib.h>
-#include <stdio.h>
+#include <string.h>
 #include "env.h"
+#include "vmerror.h"
 
 void node_init(struct Node* node, uint8_t c, struct Value* value) {
 	node->children = malloc(sizeof(struct Node));
@@ -33,8 +34,13 @@ void node_addChild(struct Node* node, struct Node* child) {
 void node_storeName(struct Node* node, uint8_t* name, uint64_t ptr) {
 	if (name[ptr] == 0) {
 		if (node->value != NULL) {
-			// raise name error
-			return;
+			char* msg_prefix = "Name '";
+			char* msg_postfix = "' already declared";
+			char* msg = malloc(sizeof(char) * (strlen(msg_prefix) + strlen((char*) name) + strlen(msg_postfix)));
+			strcpy(msg, msg_prefix);
+			strcpy(&msg[strlen(msg_prefix)], (char*) name);
+			strcpy(&msg[strlen(msg_prefix) + strlen((char*) name)], msg_postfix);
+			vmerror_raise(NAME_ERROR, msg);
 		}
 		node->value = malloc(sizeof(struct Value));
 		node->value->type = NIL;

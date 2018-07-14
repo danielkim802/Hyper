@@ -1,5 +1,7 @@
 #include <stdlib.h>
+#include <string.h>
 #include "envstack.h"
+#include "vmerror.h"
 
 void envstack_init(struct EnvStack* es) {
 	es->envs = malloc(sizeof(struct Env));
@@ -43,7 +45,12 @@ void envstack_loadName(struct EnvStack* es, uint8_t* name, struct Value* value) 
 			return;
 	}
 
-	// raise name error
+	char* msg_prefix = "Undefined name '";
+	char* msg = malloc(sizeof(char) * (strlen(msg_prefix) + strlen((char*) name) + 1));
+	strcpy(msg, msg_prefix);
+	strcpy(&msg[strlen(msg_prefix)], (char*) name);
+	msg[strlen(msg_prefix) + strlen((char*) name)] = '\'';
+	vmerror_raise(NAME_ERROR, msg);
 }
 
 void envstack_storeName(struct EnvStack* es, uint8_t* name) {
@@ -58,7 +65,12 @@ void envstack_assignName(struct EnvStack* es, uint8_t* name, struct Value* value
 			return;
 	}
 
-	// raise name error
+	char* msg_prefix = "Undefined name '";
+	char* msg = malloc(sizeof(char) * (strlen(msg_prefix) + strlen((char*) name) + 1));
+	strcpy(msg, msg_prefix);
+	strcpy(&msg[strlen(msg_prefix)], (char*) name);
+	msg[strlen(msg_prefix) + strlen((char*) name)] = '\'';
+	vmerror_raise(NAME_ERROR, msg);
 }
 
 

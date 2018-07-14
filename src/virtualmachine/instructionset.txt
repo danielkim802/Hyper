@@ -1,0 +1,249 @@
+-- Instructions for operating on literals
+AND ------- opcode[ 0x00 ]:
+	POP --> b
+	POP --> a
+	a && b --> PUSH
+
+	type a = BOOL
+	type b = BOOL
+
+OR -------- opcode[ 0x01 ]:
+	POP --> b
+	POP --> a
+	a || b --> PUSH
+
+	type a = BOOL
+	type b = BOOL
+
+NOT ------- opcode[ 0x02 ]:
+	POP --> a
+	!a --> PUSH
+
+	type a = BOOL
+
+LT -------- opcode[ 0x03 ]:
+	POP --> b
+	POP --> a
+	a < b --> PUSH
+
+	type a = FLOAT | INT
+	type b = FLOAT | INT
+
+LTE ------- opcode[ 0x04 ]:
+	POP --> b
+	POP --> a
+	a <= b --> PUSH
+
+	type a = FLOAT | INT
+	type b = FLOAT | INT
+
+GT -------- opcode[ 0x05 ]:
+	POP --> b
+	POP --> a
+	a > b --> PUSH
+
+	type a = FLOAT | INT
+	type b = FLOAT | INT
+
+GTE ------- opcode[ 0x06 ]:
+	POP --> b
+	POP --> a
+	a >= b --> PUSH
+
+	type a = FLOAT | INT
+	type b = FLOAT | INT
+
+NE -------- opcode[ 0x07 ]:
+	POP --> b
+	POP --> a
+	a != b --> PUSH
+
+	type a = ALL
+	type b = ALL
+
+	*note: if types are different, result is always true
+
+EQ -------- opcode[ 0x08 ]:
+	POP --> b
+	POP --> a
+	a == b --> PUSH
+
+	type a = ALL
+	type b = ALL
+
+	*note: if types are different, result is always false
+
+ADD ------- opcode[ 0x09 ]:
+	POP --> b
+	POP --> a
+	a + b --> PUSH
+
+	type a = INT | FLOAT | STRING
+	type b = INT | FLOAT | STRING
+
+	*note: works as string concatenation if both are of type
+	STRING, otherwise if one or more is FLOAT, result will be FLOAT.
+	If both are INT, result will be INT.
+
+SUB ------- opcode[ 0x0A ]:
+	POP --> b
+	POP --> a
+	a - b --> PUSH
+
+	type a = INT | FLOAT
+	type b = INT | FLOAT
+
+MUL ------- opcode[ 0x0B ]:
+	POP --> b
+	POP --> a
+	a * b --> PUSH
+
+	type a = INT | FLOAT
+	type b = INT | FLOAT
+
+	*note: If both are INT, result will be INT. Otherwise,
+	result will be FLOAT.
+
+DIV ------- opcode[ 0x0C ]:
+	POP --> b
+	POP --> a
+	a / b --> PUSH
+
+	type a = INT | FLOAT
+	type b = INT | FLOAT
+
+	*note: If both are INT, result will be INT. Otherwise,
+	result will be FLOAT.
+
+PLUS ------ opcode[ 0x0D ]:
+	POP --> a
+	+a --> PUSH
+
+	type a = INT | FLOAT
+
+MINUS ----- opcode[ 0x0E ]:
+	POP --> a
+	-a --> PUSH
+
+	type a = INT | FLOAT
+
+FUN_CALL -- opcode[ 0x0F ]:
+	POP --> a
+	POP --> b1
+	POP --> b2
+	     |
+	     |
+	POP --> bn
+	a b1 b2 ... bn --> PUSH
+
+	type a = FUN
+	type b1 ... bn = ANY
+
+	*note: If there are not enough arguments, result will 
+	be FUN (closure is created). Otherwise, result is the 
+	return value of the function call.
+
+GET_ATTR -- opcode[ 0x10 ]:
+
+ARR_IDX --- opcode[ 0x11 ]:
+	POP --> a
+	POP --> b
+	b[a] --> PUSH
+
+	type a = INT
+	type b = ARR | STRING
+
+-- Instructions for loading and making literals
+LOAD_INT    opcode[ 0x12 ]:
+	a --> PUSH
+
+	type a = INT
+
+LOAD_FLOAT  opcode[ 0x13 ]:
+	a --> PUSH
+
+	type a = FLOAT
+
+LOAD_NAME   opcode[ 0x14 ]:
+	a --> PUSH
+
+	type a = ANY
+
+	*note: Looks in the environment stack starting from
+	the topmost environment to dereference the name.
+
+LOAD_BOOL   opcode[ 0x15 ]:
+	a --> PUSH
+
+	type a = BOOL
+
+LOAD_NULL   opcode[ 0x16 ]:
+	a --> PUSH
+
+	type a = NIL
+
+LOAD_STRING opcode[ 0x17 ]:
+	a --> PUSH
+
+	type a = STRING
+
+MAKE_FUN    opcode[ 0x18 ]:
+	a --> PUSH
+
+	type a = FUN
+
+MAKE_STRUCT opcode[ 0x19 ]:
+	a --> PUSH
+
+	type a = STRUCT
+
+MAKE_ARR    opcode[ 0x1A ]:
+	POP --> a1
+	POP --> a2
+		|
+		|
+	POP --> an
+	[a1, a2, ..., an] -> PUSH
+
+	type a1 ... an = ANY
+
+	*note: n is the length of the array.
+
+-- Instructions for the virtual machine
+PUSH_ENV    opcode[ 0x1B ]:
+
+POP_ENV     opcode[ 0x1C ]:
+
+
+-- Instructions for executing statements
+ASSIGN_NAME opcode[ 0x1D ]:
+
+STORE_ARR   opcode[ 0x1E ]:
+	POP --> a
+	POP --> b
+	POP --> c
+	c[b] = a --> PUSH
+
+	type a = ANY
+	type b = INT
+	type c = ARR
+
+STORE_ATTR  opcode[ 0x1F ]:
+
+STORE_NAME  opcode[ 0x20 ]:
+
+RETURN      opcode[ 0x21 ]:
+
+PRINT       opcode[ 0x22 ]:
+
+-- Instructions for control flow
+BTRUE       opcode[ 0x23 ]:
+
+BFALSE      opcode[ 0x24 ]:
+
+JMP         opcode[ 0x25 ]:
+
+HALT        opcode[ 0x26 ]:
+
+-- Additional instructions for the standard library
+LEN_ARR     opcode[ 0x27 ]:
