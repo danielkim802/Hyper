@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "valuestack.h"
 
 void valuestack_init(struct ValueStack* vs) {

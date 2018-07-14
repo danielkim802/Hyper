@@ -11,10 +11,11 @@
 struct VM {
 	uint8_t* mainMem;
 	uint64_t mainMemSize;
-	uint64_t pc;
 	struct ValueStack* valueStack;
 	struct EnvStack* envStack;
+	uint64_t pc;
 	uint8_t halt;
+	uint8_t debug;
 };
 
 void exec_and(struct VM* vm, struct Chunk* chunk) {
@@ -27,10 +28,12 @@ void exec_and(struct VM* vm, struct Chunk* chunk) {
 		// raise type error
 	}
 
-	struct Value* res = malloc(sizeof(struct Value));
-	res->type = BOOL;
-	res->boolValue = value1.boolValue && value2.boolValue;
-	valuestack_push(vm->valueStack, res);
+	struct Value res;
+	res.type = BOOL;
+	res.boolValue = value1.boolValue && value2.boolValue;
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value1);
+	value_free(&value2);
 }
 
 void exec_or(struct VM* vm, struct Chunk* chunk) {
@@ -43,10 +46,12 @@ void exec_or(struct VM* vm, struct Chunk* chunk) {
 		// raise type error
 	}
 
-	struct Value* res = malloc(sizeof(struct Value));
-	res->type = BOOL;
-	res->boolValue = value1.boolValue || value2.boolValue;
-	valuestack_push(vm->valueStack, res);
+	struct Value res;
+	res.type = BOOL;
+	res.boolValue = value1.boolValue || value2.boolValue;
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value1);
+	value_free(&value2);
 }
 
 void exec_not(struct VM* vm, struct Chunk* chunk) {
@@ -57,10 +62,11 @@ void exec_not(struct VM* vm, struct Chunk* chunk) {
 		// raise type error
 	}
 
-	struct Value* res = malloc(sizeof(struct Value));
-	res->type = BOOL;
-	res->boolValue = !value.boolValue;
-	valuestack_push(vm->valueStack, res);
+	struct Value res;
+	res.type = BOOL;
+	res.boolValue = !value.boolValue;
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value);
 }
 
 void exec_lt(struct VM* vm, struct Chunk* chunk) {
@@ -74,27 +80,29 @@ void exec_lt(struct VM* vm, struct Chunk* chunk) {
 		// raise type error
 	}
 
-	struct Value* res = malloc(sizeof(struct Value));
-	res->type = BOOL;
+	struct Value res;
+	res.type = BOOL;
 	switch (value1.type) {
 		case INT:
 			switch(value2.type) {
-				case INT: res->boolValue = value2.intValue < value1.intValue; break;
-				case FLOAT: res->boolValue = value2.floatValue < value1.intValue; break;
+				case INT: res.boolValue = value2.intValue < value1.intValue; break;
+				case FLOAT: res.boolValue = value2.floatValue < value1.intValue; break;
 				default: break;
 			}
 			break;
 		case FLOAT:
 			switch(value2.type) {
-				case INT: res->boolValue = value2.intValue < value1.floatValue; break;
-				case FLOAT: res->boolValue = value2.floatValue < value1.floatValue; break;
+				case INT: res.boolValue = value2.intValue < value1.floatValue; break;
+				case FLOAT: res.boolValue = value2.floatValue < value1.floatValue; break;
 				default: break;
 			}
 			break;
 		default:
 			break;
 	}
-	valuestack_push(vm->valueStack, res);
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value1);
+	value_free(&value2);
 }
 
 void exec_lte(struct VM* vm, struct Chunk* chunk) {
@@ -108,27 +116,29 @@ void exec_lte(struct VM* vm, struct Chunk* chunk) {
 		// raise type error
 	}
 
-	struct Value* res = malloc(sizeof(struct Value));
-	res->type = BOOL;
+	struct Value res;
+	res.type = BOOL;
 	switch (value1.type) {
 		case INT:
 			switch(value2.type) {
-				case INT: res->boolValue = value2.intValue <= value1.intValue; break;
-				case FLOAT: res->boolValue = value2.floatValue <= value1.intValue; break;
+				case INT: res.boolValue = value2.intValue <= value1.intValue; break;
+				case FLOAT: res.boolValue = value2.floatValue <= value1.intValue; break;
 				default: break;
 			}
 			break;
 		case FLOAT:
 			switch(value2.type) {
-				case INT: res->boolValue = value2.intValue <= value1.floatValue; break;
-				case FLOAT: res->boolValue = value2.floatValue <= value1.floatValue; break;
+				case INT: res.boolValue = value2.intValue <= value1.floatValue; break;
+				case FLOAT: res.boolValue = value2.floatValue <= value1.floatValue; break;
 				default: break;
 			}
 			break;
 		default:
 			break;
 	}
-	valuestack_push(vm->valueStack, res);
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value1);
+	value_free(&value2);
 }
 
 void exec_gt(struct VM* vm, struct Chunk* chunk) {
@@ -142,27 +152,29 @@ void exec_gt(struct VM* vm, struct Chunk* chunk) {
 		// raise type error
 	}
 
-	struct Value* res = malloc(sizeof(struct Value));
-	res->type = BOOL;
+	struct Value res;
+	res.type = BOOL;
 	switch (value1.type) {
 		case INT:
 			switch(value2.type) {
-				case INT: res->boolValue = value2.intValue > value1.intValue; break;
-				case FLOAT: res->boolValue = value2.floatValue > value1.intValue; break;
+				case INT: res.boolValue = value2.intValue > value1.intValue; break;
+				case FLOAT: res.boolValue = value2.floatValue > value1.intValue; break;
 				default: break;
 			}
 			break;
 		case FLOAT:
 			switch(value2.type) {
-				case INT: res->boolValue = value2.intValue > value1.floatValue; break;
-				case FLOAT: res->boolValue = value2.floatValue > value1.floatValue; break;
+				case INT: res.boolValue = value2.intValue > value1.floatValue; break;
+				case FLOAT: res.boolValue = value2.floatValue > value1.floatValue; break;
 				default: break;
 			}
 			break;
 		default:
 			break;
 	}
-	valuestack_push(vm->valueStack, res);
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value1);
+	value_free(&value2);
 }
 
 void exec_gte(struct VM* vm, struct Chunk* chunk) {
@@ -176,27 +188,29 @@ void exec_gte(struct VM* vm, struct Chunk* chunk) {
 		// raise type error
 	}
 
-	struct Value* res = malloc(sizeof(struct Value));
-	res->type = BOOL;
+	struct Value res;
+	res.type = BOOL;
 	switch (value1.type) {
 		case INT:
 			switch(value2.type) {
-				case INT: res->boolValue = value2.intValue >= value1.intValue; break;
-				case FLOAT: res->boolValue = value2.floatValue >= value1.intValue; break;
+				case INT: res.boolValue = value2.intValue >= value1.intValue; break;
+				case FLOAT: res.boolValue = value2.floatValue >= value1.intValue; break;
 				default: break;
 			}
 			break;
 		case FLOAT:
 			switch(value2.type) {
-				case INT: res->boolValue = value2.intValue >= value1.floatValue; break;
-				case FLOAT: res->boolValue = value2.floatValue >= value1.floatValue; break;
+				case INT: res.boolValue = value2.intValue >= value1.floatValue; break;
+				case FLOAT: res.boolValue = value2.floatValue >= value1.floatValue; break;
 				default: break;
 			}
 			break;
 		default:
 			break;
 	}
-	valuestack_push(vm->valueStack, res);
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value1);
+	value_free(&value2);
 }
 
 void exec_ne(struct VM* vm, struct Chunk* chunk) {
@@ -205,37 +219,40 @@ void exec_ne(struct VM* vm, struct Chunk* chunk) {
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
-	struct Value* res = malloc(sizeof(struct Value));
-	res->type = BOOL;
+	struct Value res;
+	res.type = BOOL;
 	if (value1.type != value2.type) {
-		res->boolValue = 1;
+		res.boolValue = 1;
 	} else {
 		switch (value1.type) {
 			case INT:
-				res->boolValue = value1.intValue != value2.intValue;
+				res.boolValue = value1.intValue != value2.intValue;
 				break;
 			case FLOAT:
-				res->boolValue = value1.floatValue != value2.floatValue;
+				res.boolValue = value1.floatValue != value2.floatValue;
 				break;
 			case STRING:
-				res->boolValue = strcmp((char*) value1.stringValue, (char*) value2.stringValue);
+				res.boolValue = strcmp((char*) value1.stringValue, (char*) value2.stringValue);
 				break;
 			case BOOL:
-				res->boolValue = (value1.boolValue && value2.boolValue) == 0;
+				res.boolValue = (value1.boolValue && value2.boolValue) == 0;
 				break;
 			case FUN:
-				res->boolValue = value1.funValue != value2.funValue;
+				res.boolValue = value1.funValue != value2.funValue;
 				break;
 			case STRUCT:
-				res->boolValue = value1.structValue != value2.structValue;
+				res.boolValue = value1.structValue != value2.structValue;
 				break;
 			case NIL:
-				res->boolValue = 0;
+				res.boolValue = 0;
+				break;
 			default:
 				break;
 		}
 	}
-	valuestack_push(vm->valueStack, res);
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value1);
+	value_free(&value2);
 }
 
 void exec_eq(struct VM* vm, struct Chunk* chunk) {
@@ -244,37 +261,40 @@ void exec_eq(struct VM* vm, struct Chunk* chunk) {
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
-	struct Value* res = malloc(sizeof(struct Value));
-	res->type = BOOL;
+	struct Value res;
+	res.type = BOOL;
 	if (value1.type != value2.type) {
-		res->boolValue = 0;
+		res.boolValue = 0;
 	} else {
 		switch (value1.type) {
 			case INT:
-				res->boolValue = value1.intValue == value2.intValue;
+				res.boolValue = value1.intValue == value2.intValue;
 				break;
 			case FLOAT:
-				res->boolValue = value1.floatValue == value2.floatValue;
+				res.boolValue = value1.floatValue == value2.floatValue;
 				break;
 			case STRING:
-				res->boolValue = !strcmp((char*) value1.stringValue, (char*) value2.stringValue);
+				res.boolValue = !strcmp((char*) value1.stringValue, (char*) value2.stringValue);
 				break;
 			case BOOL:
-				res->boolValue = (value1.boolValue && value2.boolValue) != 0;
+				res.boolValue = (value1.boolValue && value2.boolValue) != 0;
 				break;
 			case FUN:
-				res->boolValue = value1.funValue == value2.funValue;
+				res.boolValue = value1.funValue == value2.funValue;
 				break;
 			case STRUCT:
-				res->boolValue = value1.structValue == value2.structValue;
+				res.boolValue = value1.structValue == value2.structValue;
 				break;
 			case NIL:
-				res->boolValue = 1;
+				res.boolValue = 1;
+				break;
 			default:
 				break;
 		}
 	}
-	valuestack_push(vm->valueStack, res);
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value1);
+	value_free(&value2);
 }
 
 void exec_add(struct VM* vm, struct Chunk* chunk) {
@@ -285,20 +305,22 @@ void exec_add(struct VM* vm, struct Chunk* chunk) {
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
 		(value2.type != INT && value2.type != FLOAT)) {
-		// raise type error
+		if (!(value1.type == STRING && value2.type == STRING)) {
+			// raise type error
+		}
 	}
 
-	struct Value* res = malloc(sizeof(struct Value));
+	struct Value res;
 	switch (value1.type) {
 		case INT:
 			switch(value2.type) {
 				case INT:
-					res->type = INT;
-					res->intValue = value1.intValue + value2.intValue;
+					res.type = INT;
+					res.intValue = value1.intValue + value2.intValue;
 					break;
 				case FLOAT:
-					res->type = FLOAT;
-					res->floatValue = value1.intValue + value2.floatValue;
+					res.type = FLOAT;
+					res.floatValue = value1.intValue + value2.floatValue;
 					break;
 				default:
 					break;
@@ -307,21 +329,34 @@ void exec_add(struct VM* vm, struct Chunk* chunk) {
 		case FLOAT:
 			switch(value2.type) {
 				case INT: 
-					res->type = FLOAT;
-					res->floatValue = value1.floatValue + value2.intValue;
+					res.type = FLOAT;
+					res.floatValue = value1.floatValue + value2.intValue;
 					break;
 				case FLOAT:
-					res->type = FLOAT;
-					res->floatValue = value1.floatValue + value2.floatValue;
+					res.type = FLOAT;
+					res.floatValue = value1.floatValue + value2.floatValue;
 					break;
 				default:
 					break;
 			}
 			break;
+		uint64_t len1;
+		uint64_t len2;
+		case STRING:
+			res.type = STRING;
+			len1 = strlen((char*) value1.stringValue);
+			len2 = strlen((char*) value2.stringValue);
+			res.stringValue = malloc(sizeof(uint8_t) * (len1 + len2 + 1));
+			strcpy((char*) res.stringValue, (char*) value1.stringValue);
+			strcpy((char*) &res.stringValue[len1], (char*) value2.stringValue);
+			res.stringValue[len1 + len2] = 0;
+			break;
 		default:
 			break;
 	}
-	valuestack_push(vm->valueStack, res);
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value1);
+	value_free(&value2);
 }
 
 void exec_sub(struct VM* vm, struct Chunk* chunk) {
@@ -335,17 +370,17 @@ void exec_sub(struct VM* vm, struct Chunk* chunk) {
 		// raise type error
 	}
 
-	struct Value* res = malloc(sizeof(struct Value));
+	struct Value res;
 	switch (value1.type) {
 		case INT:
 			switch(value2.type) {
 				case INT:
-					res->type = INT;
-					res->intValue = value1.intValue - value2.intValue;
+					res.type = INT;
+					res.intValue = value1.intValue - value2.intValue;
 					break;
 				case FLOAT:
-					res->type = FLOAT;
-					res->floatValue = value1.intValue - value2.floatValue;
+					res.type = FLOAT;
+					res.floatValue = value1.intValue - value2.floatValue;
 					break;
 				default:
 					break;
@@ -354,12 +389,12 @@ void exec_sub(struct VM* vm, struct Chunk* chunk) {
 		case FLOAT:
 			switch(value2.type) {
 				case INT: 
-					res->type = FLOAT;
-					res->floatValue = value1.floatValue - value2.intValue;
+					res.type = FLOAT;
+					res.floatValue = value1.floatValue - value2.intValue;
 					break;
 				case FLOAT:
-					res->type = FLOAT;
-					res->floatValue = value1.floatValue - value2.floatValue;
+					res.type = FLOAT;
+					res.floatValue = value1.floatValue - value2.floatValue;
 					break;
 				default:
 					break;
@@ -368,7 +403,9 @@ void exec_sub(struct VM* vm, struct Chunk* chunk) {
 		default:
 			break;
 	}
-	valuestack_push(vm->valueStack, res);
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value1);
+	value_free(&value2);
 }
 
 void exec_mul(struct VM* vm, struct Chunk* chunk) {
@@ -382,17 +419,17 @@ void exec_mul(struct VM* vm, struct Chunk* chunk) {
 		// raise type error
 	}
 
-	struct Value* res = malloc(sizeof(struct Value));
+	struct Value res;
 	switch (value1.type) {
 		case INT:
 			switch(value2.type) {
 				case INT:
-					res->type = INT;
-					res->intValue = value1.intValue * value2.intValue;
+					res.type = INT;
+					res.intValue = value1.intValue * value2.intValue;
 					break;
 				case FLOAT:
-					res->type = FLOAT;
-					res->floatValue = value1.intValue * value2.floatValue;
+					res.type = FLOAT;
+					res.floatValue = value1.intValue * value2.floatValue;
 					break;
 				default:
 					break;
@@ -401,12 +438,12 @@ void exec_mul(struct VM* vm, struct Chunk* chunk) {
 		case FLOAT:
 			switch(value2.type) {
 				case INT: 
-					res->type = FLOAT;
-					res->floatValue = value1.floatValue * value2.intValue;
+					res.type = FLOAT;
+					res.floatValue = value1.floatValue * value2.intValue;
 					break;
 				case FLOAT:
-					res->type = FLOAT;
-					res->floatValue = value1.floatValue * value2.floatValue;
+					res.type = FLOAT;
+					res.floatValue = value1.floatValue * value2.floatValue;
 					break;
 				default:
 					break;
@@ -415,7 +452,9 @@ void exec_mul(struct VM* vm, struct Chunk* chunk) {
 		default:
 			break;
 	}
-	valuestack_push(vm->valueStack, res);
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value1);
+	value_free(&value2);
 }
 
 void exec_div(struct VM* vm, struct Chunk* chunk) {
@@ -429,17 +468,17 @@ void exec_div(struct VM* vm, struct Chunk* chunk) {
 		// raise type error
 	}
 
-	struct Value* res = malloc(sizeof(struct Value));
+	struct Value res;
 	switch (value1.type) {
 		case INT:
 			switch(value2.type) {
 				case INT:
-					res->type = INT;
-					res->intValue = value1.intValue / value2.intValue;
+					res.type = INT;
+					res.intValue = value1.intValue / value2.intValue;
 					break;
 				case FLOAT:
-					res->type = FLOAT;
-					res->floatValue = value1.intValue / value2.floatValue;
+					res.type = FLOAT;
+					res.floatValue = value1.intValue / value2.floatValue;
 					break;
 				default:
 					break;
@@ -448,12 +487,12 @@ void exec_div(struct VM* vm, struct Chunk* chunk) {
 		case FLOAT:
 			switch(value2.type) {
 				case INT: 
-					res->type = FLOAT;
-					res->floatValue = value1.floatValue / value2.intValue;
+					res.type = FLOAT;
+					res.floatValue = value1.floatValue / value2.intValue;
 					break;
 				case FLOAT:
-					res->type = FLOAT;
-					res->floatValue = value1.floatValue / value2.floatValue;
+					res.type = FLOAT;
+					res.floatValue = value1.floatValue / value2.floatValue;
 					break;
 				default:
 					break;
@@ -462,7 +501,9 @@ void exec_div(struct VM* vm, struct Chunk* chunk) {
 		default:
 			break;
 	}
-	valuestack_push(vm->valueStack, res);
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value1);
+	value_free(&value2);
 }
 
 void exec_plus(struct VM* vm, struct Chunk* chunk) {
@@ -473,20 +514,21 @@ void exec_plus(struct VM* vm, struct Chunk* chunk) {
 		// raise type error
 	}
 
-	struct Value* res = malloc(sizeof(struct Value));
+	struct Value res;
 	switch (value.type) {
 		case INT:
-			res->type = INT;
-			res->intValue = +value.intValue;
+			res.type = INT;
+			res.intValue = +value.intValue;
 			break;
 		case FLOAT:
-			res->type = FLOAT;
-			res->floatValue = +value.floatValue;
+			res.type = FLOAT;
+			res.floatValue = +value.floatValue;
 			break;
 		default:
 			break;
 	}
-	valuestack_push(vm->valueStack, res);
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value);
 }
 
 void exec_minus(struct VM* vm, struct Chunk* chunk) {
@@ -497,20 +539,21 @@ void exec_minus(struct VM* vm, struct Chunk* chunk) {
 		// raise type error
 	}
 
-	struct Value* res = malloc(sizeof(struct Value));
+	struct Value res;
 	switch (value.type) {
 		case INT:
-			res->type = INT;
-			res->intValue = -value.intValue;
+			res.type = INT;
+			res.intValue = -value.intValue;
 			break;
 		case FLOAT:
-			res->type = FLOAT;
-			res->floatValue = -value.floatValue;
+			res.type = FLOAT;
+			res.floatValue = -value.floatValue;
 			break;
 		default:
 			break;
 	}
-	valuestack_push(vm->valueStack, res);
+	valuestack_push(vm->valueStack, &res);
+	value_free(&value);
 }
 
 void exec_fun_call(struct VM* vm, struct Chunk* chunk) {
@@ -522,46 +565,85 @@ void exec_get_attr(struct VM* vm, struct Chunk* chunk) {
 }
 
 void exec_arr_idx(struct VM* vm, struct Chunk* chunk) {
+	struct Value arr;
+	struct Value idx;
+	valuestack_pop(vm->valueStack, &idx);
+	valuestack_pop(vm->valueStack, &arr);
 
+	if (arr.type != ARR && arr.type != STRING) {
+		// raise array type error
+	}
+	if (idx.type != INT) {
+		// raise array idx error
+	}
+	if (arr.type == ARR && idx.intValue >= arr.arrLen) {
+		// raise array idx error
+	}
+	if (arr.type == STRING && idx.intValue >= arr.stringLen) {
+		// raise string idx error
+	}
+
+	if (arr.type == ARR) {
+		valuestack_push(vm->valueStack, &arr.arrValue[idx.intValue]);
+		return;
+	}
+	struct Value str;
+	str.type = STRING;
+	str.stringValue = malloc(sizeof(uint8_t) * 1);
+	str.stringLen = 1;
+	str.stringValue[0] = arr.stringValue[idx.intValue];
+	valuestack_push(vm->valueStack, &str);
 }
 
 void exec_load_int(struct VM* vm, struct Chunk* chunk) {
-	struct Value* value = malloc(sizeof(struct Value));
-	value->type = INT;
-	value->intValue = chunk->intArg;
-	valuestack_push(vm->valueStack, value);
+	struct Value value;
+	value.type = INT;
+	value.intValue = chunk->intArg;
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_float(struct VM* vm, struct Chunk* chunk) {
-	struct Value* value = malloc(sizeof(struct Value));
-	value->type = FLOAT;
-	value->floatValue = chunk->floatArg;
-	valuestack_push(vm->valueStack, value);
+	struct Value value;
+	value.type = FLOAT;
+	value.floatValue = chunk->floatArg;
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_name(struct VM* vm, struct Chunk* chunk) {
+	struct Value value;
+	envstack_loadName(vm->envStack, chunk->stringArg, &value);
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_bool(struct VM* vm, struct Chunk* chunk) {
-	struct Value* value = malloc(sizeof(struct Value));
-	value->type = BOOL;
-	value->boolValue = chunk->boolArg;
-	valuestack_push(vm->valueStack, value);
+	struct Value value;
+	value.type = BOOL;
+	value.boolValue = chunk->boolArg;
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_null(struct VM* vm, struct Chunk* chunk) {
-
+	struct Value value;
+	value.type = NIL;
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_string(struct VM* vm, struct Chunk* chunk) {
-	struct Value* value = malloc(sizeof(struct Value));
-	value->type = STRING;
-	value->stringValue = chunk->stringArg;
-	valuestack_push(vm->valueStack, value);
+	struct Value value;
+	value.type = STRING;
+	value.stringValue = chunk->stringArg;
+	value.stringLen = strlen((char*) value.stringValue);
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_make_fun(struct VM* vm, struct Chunk* chunk) {
-
+	struct Value value;
+	value.type = FUN;
+	value.funValue = chunk->uintArgs[0];
+	value.funArgc = chunk->uintArgs[1];
+	value.funArgs = chunk->stringArgs;
+	free(chunk->uintArgs);
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_make_struct(struct VM* vm, struct Chunk* chunk) {
@@ -569,19 +651,37 @@ void exec_make_struct(struct VM* vm, struct Chunk* chunk) {
 }
 
 void exec_make_arr(struct VM* vm, struct Chunk* chunk) {
+	struct Value value;
+	value.type = ARR;
+	value.arrLen = chunk->uintArg;
 
+	uint64_t max = 1;
+	while (max < value.arrLen)
+		max *= 2;
+
+	value.arrValue = malloc(sizeof(struct Value) * max);
+
+	for (uint64_t i = 0; i < value.arrLen; i ++)
+		valuestack_pop(vm->valueStack, &value.arrValue[i]);
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_push_env(struct VM* vm, struct Chunk* chunk) {
-
+	struct Env env;
+	env_init(&env);
+	envstack_push(vm->envStack, &env);
 }
 
 void exec_pop_env(struct VM* vm, struct Chunk* chunk) {
-
+	struct Env env;
+	envstack_pop(vm->envStack, &env);
 }
 
 void exec_assign_name(struct VM* vm, struct Chunk* chunk) {
-
+	struct Value value;
+	valuestack_pop(vm->valueStack, &value);
+	envstack_assignName(vm->envStack, chunk->stringArg, &value);
+	// printf("%i\n", vm->envStack->envs[vm->envStack->size - 1].head->children[0].children[0].children[0].value->type);
 }
 
 void exec_store_arr(struct VM* vm, struct Chunk* chunk) {
@@ -593,52 +693,89 @@ void exec_store_attr(struct VM* vm, struct Chunk* chunk) {
 }
 
 void exec_store_name(struct VM* vm, struct Chunk* chunk) {
-
+	envstack_storeName(vm->envStack, chunk->stringArg);
 }
 
 void exec_return(struct VM* vm, struct Chunk* chunk) {
 
 }
 
-void exec_print(struct VM* vm, struct Chunk* chunk) {
-	struct Value value;
-	valuestack_peek(vm->valueStack, &value);
-
-	switch (value.type) {
+void exec_print_helper(struct Value* value) {
+	switch (value->type) {
 		case INT:
-			printf("%lli\n", value.intValue);
+			printf("%lli", value->intValue);
 			break;
 		case FLOAT:
-			printf("%f\n", value.floatValue);
+			printf("%f", value->floatValue);
 			break;
 		case STRING:
-			printf("%s\n", value.stringValue);
+			printf("%s", value->stringValue);
 			break;
 		case BOOL:
-			printf(value.boolValue ? "true\n" : "false\n");
+			printf(value->boolValue ? "true" : "false");
 			break;
 		case FUN:
-			printf("fun at %llx\n", value.funValue);
+			printf("-fun at 0x%llx-", value->funValue);
 			break;
 		case STRUCT:
-			printf("struct at %llx\n", value.structValue);
+			printf("-struct-");
 			break;
-		default:
-			printf("\n");
+		case ARR:
+			printf("[");
+			for (uint64_t i = 0; i < value->arrLen; i ++) {
+				if (value->arrValue[i].type == ARR)
+					printf("-arr-");
+				else
+					exec_print_helper(&value->arrValue[i]);
+				if (i != value->arrLen - 1)
+					printf(", ");
+			}
+			printf("]");
+			break;
+		case NIL:
+			printf("null");
+			break;
+		default: 
 			break;
 	}
 }
 
-void exec_btrue(struct VM* vm, struct Chunk* chunk) {
+void exec_print(struct VM* vm, struct Chunk* chunk) {
+	struct Value value;
+	valuestack_peek(vm->valueStack, &value);
 
+	exec_print_helper(&value);
+	printf("\n");
+}
+
+void exec_btrue(struct VM* vm, struct Chunk* chunk) {
+	struct Value value;
+	valuestack_pop(vm->valueStack, &value);
+
+	if (value.type != BOOL) {
+		// raise type error
+	}
+
+	if (!value.boolValue)
+		return;
+	vm->pc = chunk->uintArg;
 }
 
 void exec_bfalse(struct VM* vm, struct Chunk* chunk) {
+	struct Value value;
+	valuestack_pop(vm->valueStack, &value);
 
+	if (value.type != BOOL) {
+		// raise type error
+	}
+
+	if (value.boolValue)
+		return;
+	vm->pc = chunk->uintArg;
 }
 
 void exec_jmp(struct VM* vm, struct Chunk* chunk) {
-
+	vm->pc = chunk->uintArg;
 }
 
 void exec_halt(struct VM* vm, struct Chunk* chunk) {
@@ -671,6 +808,7 @@ void vm_init(struct VM* vm, char* filename) {
 		vm->mainMem[i] = fgetc(f);
 	vm->pc = 0;
 	vm->halt = 0;
+	vm->debug = 0;
 
 	// setup jump table
 	// expressions
@@ -726,6 +864,16 @@ void vm_init(struct VM* vm, char* filename) {
 	exec_func[LEN_ARR]     = exec_len_arr;
 }
 
+void vm_printValueStack(struct VM* vm) {
+	printf("----valuestack\n");
+	for (uint64_t i = 0; i < vm->valueStack->size; i ++) {
+		printf("[%lli] ", i);
+		exec_print_helper(&vm->valueStack->values[i]);
+		printf("\n");
+	}
+	printf("----valuestack end\n");
+}
+
 void vm_disassemble(struct VM* vm) {
 	printf("[%llu bytes read]\n", vm->mainMemSize);
 	while (vm->pc < vm->mainMemSize) {
@@ -747,9 +895,12 @@ void vm_free(struct VM* vm) {
 
 void vm_exec(struct VM* vm) {
 	struct Chunk chunk;
+	if (vm->debug)
+		printf("[%5llu] ", vm->pc);
 	vm->pc += chunk_get(&chunk, &vm->mainMem[vm->pc]);
+	if (vm->debug)
+		chunk_print(&chunk);
 	(*exec_func[chunk.opcode])(vm, &chunk);
-	chunk_free(&chunk);
 }
 
 void vm_run(struct VM* vm) {
@@ -757,9 +908,10 @@ void vm_run(struct VM* vm) {
 		vm_exec(vm);
 }
 
-int main(void) {
+int main(int argc, char* argv[]) {
 	struct VM vm;
-	vm_init(&vm, "../../data/test.hyp.o");
+	vm_init(&vm, "../../data/test.hypc");
+	vm.debug = 1;
 	vm_run(&vm);
 	vm_free(&vm);
 	return 0;

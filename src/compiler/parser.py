@@ -88,7 +88,10 @@ class Lexer(object):
 	def __init__(self, src):
 		self.text = src
 		self.pos = 0
-		self.char = self.text[self.pos]
+		if len(self.text) == 0:
+			self.char = None
+		else:
+			self.char = self.text[self.pos]
 		self.line = 1
 
 	def error(self, char, msg):
@@ -867,6 +870,3 @@ class Parser(object):
 
 	def parse(self):
 		return self.program()
-
-# tree = Parser(open("script.txt", 'r').read(), trace=False).parse()
-# print tree.stmts

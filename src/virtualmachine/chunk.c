@@ -21,7 +21,7 @@ uint64_t read_bool(struct Chunk* chunk, uint8_t* mem) {
 uint64_t read_string(struct Chunk* chunk, uint8_t* mem) {
 	uint64_t ptr = 0;
 	while (mem[ptr++] != 0);
-	chunk->stringArg = (uint8_t*) malloc(sizeof(uint8_t) * ptr);
+	chunk->stringArg = malloc(sizeof(uint8_t) * ptr);
 	for (int i = 0; i < ptr; i ++) {
 		chunk->stringArg[i] = mem[i];
 	}
@@ -29,12 +29,12 @@ uint64_t read_string(struct Chunk* chunk, uint8_t* mem) {
 }
 
 uint64_t read_strings(struct Chunk* chunk, uint8_t* mem, uint64_t len) {
-	chunk->stringArgs = (uint8_t**) malloc(sizeof(uint8_t*) * len);
+	chunk->stringArgs = malloc(sizeof(uint8_t*) * len);
 	uint64_t ptr = 0;
 	for (uint64_t i = 0; i < len; i ++) {
 		uint64_t count = 0;
 		while (mem[ptr + count++] != 0);
-		chunk->stringArgs[i] = (uint8_t*) malloc(sizeof(uint8_t) * count);
+		chunk->stringArgs[i] = malloc(sizeof(uint8_t) * count);
 		for (int j = 0; j < count; j ++) {
 			chunk->stringArgs[i][j] = mem[ptr + j];
 		}

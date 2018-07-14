@@ -6,23 +6,27 @@
 
 struct Node {
 	uint8_t c;
-	char terminal;
-	struct Node* children;
 	struct Value* value;
+	struct Node* children;
+	uint8_t size;
+	uint8_t max;
 };
 
 struct Env {
 	struct Node* head;
 };
 
+// initializes environment
+void env_init(struct Env* env);
+
 // stores a name in the environment
-int env_storeName(struct Env* env, uint8_t* name);
+void env_storeName(struct Env* env, uint8_t* name);
 
 // assigns a name to a value
-int env_assignName(struct Env* env, uint8_t* name);
+void env_assignName(struct Env* env, uint8_t* name, struct Value* value);
 
 // loads value of a name 
-int env_loadName(struct Env* env, uint8_t* name, struct Value* value);
+void env_loadName(struct Env* env, uint8_t* name, struct Value* value);
 
 // frees environment
 void env_free(struct Env* env);

@@ -1,6 +1,6 @@
 import parser
 import struct
-import time, sys
+import sys
 
 # opcodes
 # expressions
@@ -95,7 +95,11 @@ class ASTTraverser(object):
 
 class Compiler(ASTTraverser):
 	def __init__(self, filename):
-		text = open(filename, 'r').read()
+		try:
+			text = open(filename, 'r').read()
+		except IOError:
+			print filename + " No such file"
+			sys.exit(0)
 		self.file = filename
 		self.parser = parser.Parser(text)
 		self.buffer = bytearray()
@@ -469,7 +473,7 @@ class Compiler(ASTTraverser):
 		self.visit(ast)
 		if self.warnings:
 			print self.warnings
-		file = open(self.file + '.o', 'w')
+		file = open(self.file + 'c', 'w')
 		file.write(self.buffer)
 
 class Disassembler(object):
@@ -682,9 +686,3 @@ class Disassembler(object):
 		while not self.eof():
 			self.read_cmd()
 		return self.text
-
-start = time.time()
-filename = "../../data/test.hyp"
-Compiler(filename).compile()
-print '[', time.time() - start, ']'
-print Disassembler(filename + ".o").disassemble()

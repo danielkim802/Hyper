@@ -36,6 +36,30 @@ void envstack_free(struct EnvStack* es) {
 }
 
 void envstack_loadName(struct EnvStack* es, uint8_t* name, struct Value* value) {
-	for (int64_t i = es->size - 1; i >= 0; i --)
+	for (int64_t i = es->size - 1; i >= 0; i --) {
+		value->valid = 1;
 		env_loadName(&es->envs[i], name, value);
+		if (value->valid)
+			return;
+	}
+
+	// raise name error
 }
+
+void envstack_storeName(struct EnvStack* es, uint8_t* name) {
+	env_storeName(&es->envs[es->size - 1], name);
+}
+
+void envstack_assignName(struct EnvStack* es, uint8_t* name, struct Value* value) {
+	for (int64_t i = es->size - 1; i >= 0; i --) {
+		value->valid = 1;
+		env_assignName(&es->envs[i], name, value);
+		if (value->valid)
+			return;
+	}
+
+	// raise name error
+}
+
+
+
