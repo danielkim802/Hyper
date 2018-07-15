@@ -1,14 +1,7 @@
 #ifndef VALUESTACK_H
 #define VALUESTACK_H
 
-#include "value.h"
-
-// dynamic array
-struct ValueStack {
-	struct Value* values;
-	uint64_t size;
-	uint64_t max;
-};
+#include "vmstructs.h"
 
 // initializes the value stack
 void valuestack_init(struct ValueStack* vs);

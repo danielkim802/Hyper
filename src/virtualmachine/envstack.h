@@ -1,16 +1,7 @@
 #ifndef ENVSTACK_H
 #define ENVSTACK_H
 
-#include <stdint.h>
-#include "value.h"
-#include "env.h"
-
-// dynamic array
-struct EnvStack {
-	struct Env* envs;
-	uint64_t size;
-	uint64_t max;
-};
+#include "vmstructs.h"
 
 // initializes the env stack
 void envstack_init(struct EnvStack* es);

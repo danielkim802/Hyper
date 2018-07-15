@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "valuestack.h"
+#include "value.h"
 
 void valuestack_init(struct ValueStack* vs) {
 	vs->values = malloc(sizeof(struct Value));

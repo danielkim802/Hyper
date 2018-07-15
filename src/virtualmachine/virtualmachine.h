@@ -3,8 +3,7 @@
 
 #include <stdint.h>
 #include "chunk.h"
-#include "valuestack.h"
-#include "envstack.h"
+#include "vmutils.h"
 
 struct VM {
 	uint8_t* mainMem;

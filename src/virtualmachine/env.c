@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "env.h"
+#include "value.h"
 #include "vmerror.h"
 
 void node_init(struct Node* node, uint8_t c, struct Value* value) {

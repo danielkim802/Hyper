@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "envstack.h"
+#include "env.h"
 #include "vmerror.h"
 
 void envstack_init(struct EnvStack* es) {

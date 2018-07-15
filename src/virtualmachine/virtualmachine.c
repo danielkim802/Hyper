@@ -3,9 +3,6 @@
 #include <string.h>
 #include "virtualmachine.h"
 #include "opcode.h"
-#include "value.h"
-#include "valuestack.h"
-#include "envstack.h"
 #include "vmerror.h"
 
 void exec_and(struct VM* vm) {

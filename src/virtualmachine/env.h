@@ -1,21 +1,7 @@
 #ifndef ENV_H
 #define ENV_H
 
-#include <stdint.h>
-#include "value.h"
-
-struct Node {
-	uint8_t c;
-	struct Value* value;
-	struct Node* children;
-	uint8_t size;
-	uint8_t max;
-};
-
-struct Env {
-	struct Node* head;
-	uint64_t stackPos;
-};
+#include "vmstructs.h"
 
 // initializes environment
 void env_init(struct Env* env, uint64_t pos);
