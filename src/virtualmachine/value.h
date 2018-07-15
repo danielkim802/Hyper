@@ -2,6 +2,7 @@
 #define VALUE_H
 
 #include "env.h"
+#include "envstack.h"
 
 enum Type {
 	INT, FLOAT, STRING, BOOL, FUN, STRUCT, NIL, ARR
@@ -15,7 +16,7 @@ struct Value {
 	uint64_t stringLen;
 	uint8_t boolValue;
 	uint64_t funValue;
-	struct Env* funEnv;
+	struct EnvStack* funEnvStack;
 	uint64_t funArgc;
 	uint8_t** funArgs;
 	struct Env* structValue;

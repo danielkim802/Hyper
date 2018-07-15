@@ -253,14 +253,12 @@ class Compiler(ASTTraverser):
 			self.write_cmd(NOT, node.token)
 
 	def visit_FunCall(self, node):
-		self.write_cmd(LOAD_INT)
-		addr = self.save(parser.INT)
 		for i in reversed(node.args):
 			self.visit(i)
 		self.visit(node.fun)
 		self.write_cmd(FUN_CALL)
 		self.write_value(parser.INT, len(node.args))
-		self.write_saved(addr, parser.INT, len(self.buffer))
+		self.write_value(parser.INT, len(self.buffer) + 8)
 
 	def visit_AttrRef(self, node):
 		self.visit(node.obj)
@@ -333,7 +331,8 @@ class Compiler(ASTTraverser):
 		if node.expr is not None:
 			self.visit(node.expr)
 		else:
-			self.write_cmd(LOAD_NULL, node.token)
+			self.write_cmd(LOAD_STRING, node.token)
+			self.write_value(parser.STRING, '')
 		self.write_cmd(PRINT, node.token)
 
 	def visit_If(self, node):
@@ -391,7 +390,9 @@ class Compiler(ASTTraverser):
 		end_addr = self.save(parser.INT)
 
 		# body
+		self.write_cmd(PUSH_ENV)
 		self.visit(node.content)
+		self.write_cmd(POP_ENV)
 
 		# increment counter
 		self.write_cmd(LOAD_INT)
@@ -409,9 +410,6 @@ class Compiler(ASTTraverser):
 		self.write_cmd(POP_ENV)
 
 	def visit_While(self, node):
-		# setup loop
-		self.write_cmd(PUSH_ENV, node.token)
-		
 		# condition check
 		jmp_addr = len(self.buffer)
 		self.visit(node.condition)
@@ -419,13 +417,14 @@ class Compiler(ASTTraverser):
 		end_addr = self.save(parser.INT)
 		
 		# body
+		self.write_cmd(PUSH_ENV, node.token)
 		self.visit(node.content)
+		self.write_cmd(POP_ENV)
 		self.write_cmd(JMP)
 		self.write_value(parser.INT, jmp_addr)
 		
 		# end of loop
 		self.write_saved(end_addr, parser.INT, len(self.buffer))
-		self.write_cmd(POP_ENV)
 
 	def visit_EOF(self, node):
 		self.write_cmd(HALT, node.token)
@@ -591,8 +590,7 @@ class Disassembler(object):
 		pass
 
 	def read_fun_call(self):
-		args = self.get_int()
-		self.text += str(args)
+		self.text += str(self.get_int()) + " " + str(self.get_int())
 
 	def read_get_attr(self):
 		name = self.get_string()

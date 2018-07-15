@@ -2,13 +2,16 @@
 #define VIRTUALMACHINE_H
 
 #include <stdint.h>
+#include "chunk.h"
+#include "valuestack.h"
+#include "envstack.h"
 
 struct VM {
 	uint8_t* mainMem;
 	uint64_t mainMemSize;
-	struct ValueStack* valueStack;
-	struct EnvStack* envStack;
-	struct Chunk* chunk;
+	struct ValueStack valueStack;
+	struct EnvStack envStack;
+	struct Chunk chunk;
 	uint64_t pc;
 	uint8_t halt;
 	uint8_t debug;

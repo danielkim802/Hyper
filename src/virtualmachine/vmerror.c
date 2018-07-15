@@ -4,7 +4,7 @@
 #include "chunk.h"
 
 void vmerror_raise(enum VMError err, char* msg) {
-	printf("line %llu ", vmerror_vm->chunk->line);
+	printf("line %llu ", vmerror_vm->chunk.line);
 
 	switch (err) {
 		case TYPE_ERROR:

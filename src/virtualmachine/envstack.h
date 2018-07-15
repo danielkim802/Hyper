@@ -2,8 +2,8 @@
 #define ENVSTACK_H
 
 #include <stdint.h>
-#include "env.h"
 #include "value.h"
+#include "env.h"
 
 // dynamic array
 struct EnvStack {

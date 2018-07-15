@@ -102,9 +102,10 @@ void node_assignName(struct Node* node, uint8_t* name, uint64_t ptr, struct Valu
 	value->valid = 0;
 }
 
-void env_init(struct Env* env) {
+void env_init(struct Env* env, uint64_t pos) {
 	env->head = malloc(sizeof(struct Node));
 	node_init(env->head, 0, NULL);
+	env->stackPos = pos;
 }
 
 void env_storeName(struct Env* env, uint8_t* name) {

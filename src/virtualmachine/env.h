@@ -14,10 +14,11 @@ struct Node {
 
 struct Env {
 	struct Node* head;
+	uint64_t stackPos;
 };
 
 // initializes environment
-void env_init(struct Env* env);
+void env_init(struct Env* env, uint64_t pos);
 
 // stores a name in the environment
 void env_storeName(struct Env* env, uint8_t* name);

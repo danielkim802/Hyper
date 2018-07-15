@@ -88,7 +88,7 @@ uint64_t chunk_get(struct Chunk* chunk, uint8_t* mem) {
 		case PLUS: break;
 		case MINUS: break;
 		case FUN_CALL:
-			ptr += read_uint(chunk, &mem[ptr]);
+			ptr += read_uints(chunk, &mem[ptr], 2);
 			break;
 		case GET_ATTR:
 			ptr += read_string(chunk, &mem[ptr]);
@@ -113,7 +113,7 @@ uint64_t chunk_get(struct Chunk* chunk, uint8_t* mem) {
 			ptr += read_string(chunk, &mem[ptr]);
 			break;
 		case MAKE_FUN:
-			ptr += read_uints(chunk, &mem[ptr], 2L);
+			ptr += read_uints(chunk, &mem[ptr], 2);
 			ptr += read_strings(chunk, &mem[ptr], chunk->uintArgs[1]);
 			break;
 		case MAKE_STRUCT: break;
@@ -176,7 +176,9 @@ void chunk_free(struct Chunk* chunk) {
 		case DIV: break;
 		case PLUS: break;
 		case MINUS: break;
-		case FUN_CALL: break;
+		case FUN_CALL: 
+			free(chunk->uintArgs);
+			break;
 		case GET_ATTR:
 			free(chunk->stringArg);
 			break;
@@ -233,7 +235,7 @@ void chunk_free(struct Chunk* chunk) {
 
 void chunk_print(struct Chunk* chunk) {
 	// print line number
-	printf("[%3llu] ", chunk->line);
+	printf("[%4llu] ", chunk->line);
 
 	switch(chunk->opcode) {
 		// expressions
@@ -252,7 +254,7 @@ void chunk_print(struct Chunk* chunk) {
 		case DIV: printf("DIV"); break;
 		case PLUS: printf("PLUS"); break;
 		case MINUS: printf("MINUS"); break;
-		case FUN_CALL: printf("FUN_CALL %llu", chunk->uintArg); break;
+		case FUN_CALL: printf("FUN_CALL %llu %llu", chunk->uintArgs[0], chunk->uintArgs[1]); break;
 		case GET_ATTR: printf("GET_ATTR %s", chunk->stringArg); break;
 		case ARR_IDX: printf("ARR_IDX"); break;
 
@@ -292,7 +294,7 @@ void chunk_print(struct Chunk* chunk) {
 		// library functions
 		case LEN_ARR: printf("LEN_ARR"); break;
 
-		default: printf("!!UNKNOWN_FUNC");
+		default: printf("!!UNKNOWN_FUNC"); break;
 	}
 
 	printf("\n");

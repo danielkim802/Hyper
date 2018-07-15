@@ -1,3 +1,8 @@
+** Instructions operate on a stack of values and a stack of environments (an 
+environment is basically a hashmap from strings -> values). POP pops from the 
+value stack and PUSH pushes to the value stack. POP_ENV pops from the environment 
+stack and PUSH_ENV pushes to it.
+
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                                 *** Instructions for operating on literals *** │
 └────────────────────────────────────────────────────────────────────────────────┘
