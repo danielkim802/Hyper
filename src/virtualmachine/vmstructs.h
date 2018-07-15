@@ -19,6 +19,7 @@ struct Value {
 	struct EnvStack* funEnvStack;
 	uint64_t funArgc;
 	uint8_t** funArgs;
+	uint64_t funReturn;
 	struct Env* structValue;
 	struct Value* arrValue;
 	uint64_t arrLen;

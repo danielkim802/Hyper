@@ -294,7 +294,7 @@ void chunk_print(struct Chunk* chunk) {
 		// library functions
 		case LEN_ARR: printf("LEN_ARR"); break;
 
-		default: printf("!!UNKNOWN_FUNC"); break;
+		default: printf("!!UNKNOWN_FUNC %u", chunk->opcode); break;
 	}
 
 	printf("\n");

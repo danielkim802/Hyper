@@ -6,7 +6,7 @@
 struct VM* vmerror_vm;
 
 enum VMError {
-	TYPE_ERROR, NAME_ERROR, INDEX_ERROR
+	TYPE_ERROR, NAME_ERROR, INDEX_ERROR, SYNTAX_ERROR
 };
 
 void vmerror_raise(enum VMError err, char* msg);

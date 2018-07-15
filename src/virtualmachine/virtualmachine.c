@@ -8,8 +8,8 @@
 void exec_and(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
-	valuestack_pop(&vm->valueStack, &value1);
-	valuestack_pop(&vm->valueStack, &value2);
+	valuestack_pop(vm->valueStack, &value1);
+	valuestack_pop(vm->valueStack, &value2);
 
 	if (value1.type != BOOL || value2.type != BOOL)
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for 'and' operator");
@@ -17,7 +17,7 @@ void exec_and(struct VM* vm) {
 	struct Value res;
 	res.type = BOOL;
 	res.boolValue = value1.boolValue && value2.boolValue;
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value1);
 	value_free(&value2);
 }
@@ -25,8 +25,8 @@ void exec_and(struct VM* vm) {
 void exec_or(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
-	valuestack_pop(&vm->valueStack, &value1);
-	valuestack_pop(&vm->valueStack, &value2);
+	valuestack_pop(vm->valueStack, &value1);
+	valuestack_pop(vm->valueStack, &value2);
 
 	if (value1.type != BOOL || value2.type != BOOL)
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for 'or' operator");
@@ -34,14 +34,14 @@ void exec_or(struct VM* vm) {
 	struct Value res;
 	res.type = BOOL;
 	res.boolValue = value1.boolValue || value2.boolValue;
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value1);
 	value_free(&value2);
 }
 
 void exec_not(struct VM* vm) {
 	struct Value value;
-	valuestack_pop(&vm->valueStack, &value);
+	valuestack_pop(vm->valueStack, &value);
 
 	if (value.type != BOOL)
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for 'not' operator");
@@ -49,15 +49,15 @@ void exec_not(struct VM* vm) {
 	struct Value res;
 	res.type = BOOL;
 	res.boolValue = !value.boolValue;
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value);
 }
 
 void exec_lt(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
-	valuestack_pop(&vm->valueStack, &value1);
-	valuestack_pop(&vm->valueStack, &value2);
+	valuestack_pop(vm->valueStack, &value1);
+	valuestack_pop(vm->valueStack, &value2);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
 		(value2.type != INT && value2.type != FLOAT))
@@ -83,7 +83,7 @@ void exec_lt(struct VM* vm) {
 		default:
 			break;
 	}
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value1);
 	value_free(&value2);
 }
@@ -91,8 +91,8 @@ void exec_lt(struct VM* vm) {
 void exec_lte(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
-	valuestack_pop(&vm->valueStack, &value1);
-	valuestack_pop(&vm->valueStack, &value2);
+	valuestack_pop(vm->valueStack, &value1);
+	valuestack_pop(vm->valueStack, &value2);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
 		(value2.type != INT && value2.type != FLOAT))
@@ -118,7 +118,7 @@ void exec_lte(struct VM* vm) {
 		default:
 			break;
 	}
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value1);
 	value_free(&value2);
 }
@@ -126,8 +126,8 @@ void exec_lte(struct VM* vm) {
 void exec_gt(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
-	valuestack_pop(&vm->valueStack, &value1);
-	valuestack_pop(&vm->valueStack, &value2);
+	valuestack_pop(vm->valueStack, &value1);
+	valuestack_pop(vm->valueStack, &value2);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
 		(value2.type != INT && value2.type != FLOAT))
@@ -153,7 +153,7 @@ void exec_gt(struct VM* vm) {
 		default:
 			break;
 	}
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value1);
 	value_free(&value2);
 }
@@ -161,8 +161,8 @@ void exec_gt(struct VM* vm) {
 void exec_gte(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
-	valuestack_pop(&vm->valueStack, &value1);
-	valuestack_pop(&vm->valueStack, &value2);
+	valuestack_pop(vm->valueStack, &value1);
+	valuestack_pop(vm->valueStack, &value2);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
 		(value2.type != INT && value2.type != FLOAT))
@@ -188,7 +188,7 @@ void exec_gte(struct VM* vm) {
 		default:
 			break;
 	}
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value1);
 	value_free(&value2);
 }
@@ -196,8 +196,8 @@ void exec_gte(struct VM* vm) {
 void exec_ne(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
-	valuestack_pop(&vm->valueStack, &value1);
-	valuestack_pop(&vm->valueStack, &value2);
+	valuestack_pop(vm->valueStack, &value1);
+	valuestack_pop(vm->valueStack, &value2);
 
 	struct Value res;
 	res.type = BOOL;
@@ -230,7 +230,7 @@ void exec_ne(struct VM* vm) {
 				break;
 		}
 	}
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value1);
 	value_free(&value2);
 }
@@ -238,8 +238,8 @@ void exec_ne(struct VM* vm) {
 void exec_eq(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
-	valuestack_pop(&vm->valueStack, &value1);
-	valuestack_pop(&vm->valueStack, &value2);
+	valuestack_pop(vm->valueStack, &value1);
+	valuestack_pop(vm->valueStack, &value2);
 
 	struct Value res;
 	res.type = BOOL;
@@ -272,7 +272,7 @@ void exec_eq(struct VM* vm) {
 				break;
 		}
 	}
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value1);
 	value_free(&value2);
 }
@@ -280,8 +280,8 @@ void exec_eq(struct VM* vm) {
 void exec_add(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
-	valuestack_pop(&vm->valueStack, &value2);
-	valuestack_pop(&vm->valueStack, &value1);
+	valuestack_pop(vm->valueStack, &value2);
+	valuestack_pop(vm->valueStack, &value1);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
 		(value2.type != INT && value2.type != FLOAT))
@@ -332,7 +332,7 @@ void exec_add(struct VM* vm) {
 		default:
 			break;
 	}
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value1);
 	value_free(&value2);
 }
@@ -340,8 +340,8 @@ void exec_add(struct VM* vm) {
 void exec_sub(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
-	valuestack_pop(&vm->valueStack, &value2);
-	valuestack_pop(&vm->valueStack, &value1);
+	valuestack_pop(vm->valueStack, &value2);
+	valuestack_pop(vm->valueStack, &value1);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
 		(value2.type != INT && value2.type != FLOAT))
@@ -380,7 +380,7 @@ void exec_sub(struct VM* vm) {
 		default:
 			break;
 	}
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value1);
 	value_free(&value2);
 }
@@ -388,8 +388,8 @@ void exec_sub(struct VM* vm) {
 void exec_mul(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
-	valuestack_pop(&vm->valueStack, &value2);
-	valuestack_pop(&vm->valueStack, &value1);
+	valuestack_pop(vm->valueStack, &value2);
+	valuestack_pop(vm->valueStack, &value1);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
 		(value2.type != INT && value2.type != FLOAT))
@@ -428,7 +428,7 @@ void exec_mul(struct VM* vm) {
 		default:
 			break;
 	}
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value1);
 	value_free(&value2);
 }
@@ -436,8 +436,8 @@ void exec_mul(struct VM* vm) {
 void exec_div(struct VM* vm) {
 	struct Value value1;
 	struct Value value2;
-	valuestack_pop(&vm->valueStack, &value2);
-	valuestack_pop(&vm->valueStack, &value1);
+	valuestack_pop(vm->valueStack, &value2);
+	valuestack_pop(vm->valueStack, &value1);
 
 	if ((value1.type != INT && value1.type != FLOAT) || 
 		(value2.type != INT && value2.type != FLOAT))
@@ -476,14 +476,14 @@ void exec_div(struct VM* vm) {
 		default:
 			break;
 	}
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value1);
 	value_free(&value2);
 }
 
 void exec_plus(struct VM* vm) {
 	struct Value value;
-	valuestack_pop(&vm->valueStack, &value);
+	valuestack_pop(vm->valueStack, &value);
 
 	if (value.type != INT && value.type != FLOAT)
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '+' operator");
@@ -501,13 +501,13 @@ void exec_plus(struct VM* vm) {
 		default:
 			break;
 	}
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value);
 }
 
 void exec_minus(struct VM* vm) {
 	struct Value value;
-	valuestack_pop(&vm->valueStack, &value);
+	valuestack_pop(vm->valueStack, &value);
 
 	if (value.type != INT && value.type != FLOAT)
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '-' operator");
@@ -525,16 +525,42 @@ void exec_minus(struct VM* vm) {
 		default:
 			break;
 	}
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 	value_free(&value);
 }
 
 void exec_fun_call(struct VM* vm) {
-	// get arg count and return address
+	// get arg count, return address, and setup vm
 	uint64_t argc = vm->chunk.uintArgs[0];
 	uint64_t returnAddr = vm->chunk.uintArgs[1];
+	struct Value fun;
+	valuestack_pop(vm->valueStack, &fun);
 
-	// push new environment to store 
+	if (fun.type != FUN)
+		vmerror_raise(TYPE_ERROR, "Operand not callable");
+	if (argc > fun.funArgc)
+		vmerror_raise(TYPE_ERROR, "Too many arguments in function call");
+
+	// push new environment to store arguments
+	struct Env env;
+	env_init(&env, vm->valueStack->size - argc);
+	envstack_push(fun.funEnvStack, &env);
+
+	// add argument names and values one by one
+	for (uint64_t i = 0; i < argc; i ++) {
+		struct Value arg;
+		valuestack_pop(vm->valueStack, &arg);
+		envstack_storeName(fun.funEnvStack, fun.funArgs[i]);
+		envstack_assignName(fun.funEnvStack, fun.funArgs[i], &arg);
+	}
+
+	// push to call stack and assign return address
+	fun.funReturn = returnAddr;
+	valuestack_push(vm->callStack, &fun);
+
+	// set pc to function location and set current environment stack
+	vm->envStack = fun.funEnvStack;
+	vm->pc = fun.funValue;
 }
 
 void exec_get_attr(struct VM* vm) {
@@ -544,8 +570,8 @@ void exec_get_attr(struct VM* vm) {
 void exec_arr_idx(struct VM* vm) {
 	struct Value arr;
 	struct Value idx;
-	valuestack_pop(&vm->valueStack, &idx);
-	valuestack_pop(&vm->valueStack, &arr);
+	valuestack_pop(vm->valueStack, &idx);
+	valuestack_pop(vm->valueStack, &arr);
 
 	if (arr.type != ARR && arr.type != STRING)
 		vmerror_raise(TYPE_ERROR, "Unsupported operand type for '[ ]' operator");
@@ -557,7 +583,7 @@ void exec_arr_idx(struct VM* vm) {
 		vmerror_raise(INDEX_ERROR, "Index out of range");
 
 	if (arr.type == ARR) {
-		valuestack_push(&vm->valueStack, &arr.arrValue[idx.intValue]);
+		valuestack_push(vm->valueStack, &arr.arrValue[idx.intValue]);
 		return;
 	}
 	struct Value str;
@@ -565,40 +591,40 @@ void exec_arr_idx(struct VM* vm) {
 	str.stringValue = malloc(sizeof(uint8_t) * 1);
 	str.stringLen = 1;
 	str.stringValue[0] = arr.stringValue[idx.intValue];
-	valuestack_push(&vm->valueStack, &str);
+	valuestack_push(vm->valueStack, &str);
 }
 
 void exec_load_int(struct VM* vm) {
 	struct Value value;
 	value.type = INT;
 	value.intValue = vm->chunk.intArg;
-	valuestack_push(&vm->valueStack, &value);
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_float(struct VM* vm) {
 	struct Value value;
 	value.type = FLOAT;
 	value.floatValue = vm->chunk.floatArg;
-	valuestack_push(&vm->valueStack, &value);
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_name(struct VM* vm) {
 	struct Value value;
-	envstack_loadName(&vm->envStack, vm->chunk.stringArg, &value);
-	valuestack_push(&vm->valueStack, &value);
+	envstack_loadName(vm->envStack, vm->chunk.stringArg, &value);
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_bool(struct VM* vm) {
 	struct Value value;
 	value.type = BOOL;
 	value.boolValue = vm->chunk.boolArg;
-	valuestack_push(&vm->valueStack, &value);
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_null(struct VM* vm) {
 	struct Value value;
 	value.type = NIL;
-	valuestack_push(&vm->valueStack, &value);
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_string(struct VM* vm) {
@@ -606,7 +632,7 @@ void exec_load_string(struct VM* vm) {
 	value.type = STRING;
 	value.stringValue = vm->chunk.stringArg;
 	value.stringLen = strlen((char*) value.stringValue);
-	valuestack_push(&vm->valueStack, &value);
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_make_fun(struct VM* vm) {
@@ -615,8 +641,10 @@ void exec_make_fun(struct VM* vm) {
 	value.funValue = vm->chunk.uintArgs[0];
 	value.funArgc = vm->chunk.uintArgs[1];
 	value.funArgs = vm->chunk.stringArgs;
+	value.funEnvStack = malloc(sizeof(struct EnvStack));
+	envstack_init(value.funEnvStack);
 	free(vm->chunk.uintArgs);
-	valuestack_push(&vm->valueStack, &value);
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_make_struct(struct VM* vm) {
@@ -635,22 +663,22 @@ void exec_make_arr(struct VM* vm) {
 	value.arrValue = malloc(sizeof(struct Value) * max);
 
 	for (uint64_t i = 0; i < value.arrLen; i ++)
-		valuestack_pop(&vm->valueStack, &value.arrValue[i]);
-	valuestack_push(&vm->valueStack, &value);
+		valuestack_pop(vm->valueStack, &value.arrValue[i]);
+	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_push_env(struct VM* vm) {
 	struct Env env;
-	env_init(&env, vm->valueStack.size);
-	envstack_push(&vm->envStack, &env);
+	env_init(&env, vm->valueStack->size);
+	envstack_push(vm->envStack, &env);
 }
 
 void exec_pop_env(struct VM* vm) {
 	struct Env env;
-	envstack_pop(&vm->envStack, &env);
-	while (vm->valueStack.size > env.stackPos) {
+	envstack_pop(vm->envStack, &env);
+	while (vm->valueStack->size > env.stackPos) {
 		struct Value value;
-		valuestack_pop(&vm->valueStack, &value);
+		valuestack_pop(vm->valueStack, &value);
 		value_free(&value);
 	}
 	env_free(&env);
@@ -658,17 +686,17 @@ void exec_pop_env(struct VM* vm) {
 
 void exec_assign_name(struct VM* vm) {
 	struct Value value;
-	valuestack_pop(&vm->valueStack, &value);
-	envstack_assignName(&vm->envStack, vm->chunk.stringArg, &value);
+	valuestack_pop(vm->valueStack, &value);
+	envstack_assignName(vm->envStack, vm->chunk.stringArg, &value);
 }
 
 void exec_store_arr(struct VM* vm) {
 	struct Value value;
 	struct Value idx;
 	struct Value arr;
-	valuestack_pop(&vm->valueStack, &arr);
-	valuestack_pop(&vm->valueStack, &idx);
-	valuestack_pop(&vm->valueStack, &value);
+	valuestack_pop(vm->valueStack, &arr);
+	valuestack_pop(vm->valueStack, &idx);
+	valuestack_pop(vm->valueStack, &value);
 
 	if (arr.type != ARR && arr.type != STRING)
 		vmerror_raise(TYPE_ERROR, "Unsupported operand type for '[ ]' operator");
@@ -685,11 +713,46 @@ void exec_store_attr(struct VM* vm) {
 }
 
 void exec_store_name(struct VM* vm) {
-	envstack_storeName(&vm->envStack, vm->chunk.stringArg);
+	envstack_storeName(vm->envStack, vm->chunk.stringArg);
 }
 
 void exec_return(struct VM* vm) {
+	// pop function off call stack
+	struct Value returnFromFun;
+	valuestack_pop(vm->callStack, &returnFromFun);
 
+	// get return value from value stack and pop all function call environments
+	struct Value returnVal;
+	valuestack_pop(vm->valueStack, &returnVal);
+	while (vm->envStack->size > 1) {
+		struct Env env;
+		envstack_pop(vm->envStack, &env);
+		while (vm->valueStack->size > env.stackPos) {
+			struct Value value;
+			valuestack_pop(vm->valueStack, &value);
+			value_free(&value);
+		}
+		env_free(&env);
+	}
+
+	// pop environment holding arguments
+	struct Env argEnv;
+	envstack_pop(vm->envStack, &argEnv);
+	while (vm->valueStack->size > argEnv.stackPos) {
+		struct Value value;
+		valuestack_pop(vm->valueStack, &value);
+		value_free(&value);
+	}
+	env_free(&argEnv);
+
+	// push return value to stack
+	valuestack_push(vm->valueStack, &returnVal);
+
+	// set pc value and set environment stack
+	struct Value fun;
+	valuestack_peek(vm->callStack, &fun);
+	vm->envStack = fun.funEnvStack;
+	vm->pc = returnFromFun.funReturn;
 }
 
 void exec_print_helper(struct Value* value) {
@@ -734,14 +797,14 @@ void exec_print_helper(struct Value* value) {
 
 void exec_print(struct VM* vm) {
 	struct Value value;
-	valuestack_pop(&vm->valueStack, &value);
+	valuestack_pop(vm->valueStack, &value);
 	exec_print_helper(&value);
 	printf("\n");
 }
 
 void exec_btrue(struct VM* vm) {
 	struct Value value;
-	valuestack_pop(&vm->valueStack, &value);
+	valuestack_pop(vm->valueStack, &value);
 
 	if (value.type != BOOL)
 		vmerror_raise(TYPE_ERROR, "!!Unsupported operand type for [btrue]");
@@ -753,7 +816,7 @@ void exec_btrue(struct VM* vm) {
 
 void exec_bfalse(struct VM* vm) {
 	struct Value value;
-	valuestack_pop(&vm->valueStack, &value);
+	valuestack_pop(vm->valueStack, &value);
 
 	if (value.type != BOOL)
 		vmerror_raise(TYPE_ERROR, "!!Unsupported operand type for [bfalse]");
@@ -773,9 +836,9 @@ void exec_halt(struct VM* vm) {
 
 void exec_len_arr(struct VM* vm) {
 	struct Value value;
-	valuestack_pop(&vm->valueStack, &value);
+	valuestack_pop(vm->valueStack, &value);
 
-	if (value.type != ARR | value.type != STRING)
+	if (value.type != ARR && value.type != STRING)
 		vmerror_raise(TYPE_ERROR, "Unsupported length operand");
 
 	struct Value res;
@@ -784,19 +847,29 @@ void exec_len_arr(struct VM* vm) {
 		res.intValue = value.arrLen;
 	if (value.type == STRING)
 		res.intValue = value.stringLen;
-	valuestack_push(&vm->valueStack, &res);
+	valuestack_push(vm->valueStack, &res);
 }
 
 void (*exec_func[0x28]) (struct VM* vm);
 
 void vm_init(struct VM* vm, char* filename) {
 	// setup stacks
-	valuestack_init(&vm->valueStack);
-	envstack_init(&vm->envStack);
+	vm->valueStack = malloc(sizeof(struct ValueStack));
+	vm->callStack = malloc(sizeof(struct ValueStack));
+	vm->envStack = malloc(sizeof(struct EnvStack));
+	valuestack_init(vm->valueStack);
+	valuestack_init(vm->callStack);
+	envstack_init(vm->envStack);
+
+	// setup dummy function in call stack for global environment
+	struct Value dummy;
+	dummy.funEnvStack = malloc(sizeof(struct EnvStack));
+	dummy.funEnvStack = vm->envStack;
+	valuestack_push(vm->callStack, &dummy);
 
 	// open file and get filesize
 	FILE* f = fopen(filename, "r");
-	fseek(f, 0L, SEEK_END);
+	fseek(f, 0, SEEK_END);
 	uint64_t filesize = ftell(f);
 	rewind(f);
 
@@ -805,6 +878,7 @@ void vm_init(struct VM* vm, char* filename) {
 	vm->mainMem = malloc(sizeof(uint8_t) * filesize);
 	for (uint64_t i = 0; i < filesize; i ++)
 		vm->mainMem[i] = fgetc(f);
+	fclose(f);
 	vm->pc = 0;
 	vm->halt = 0;
 	vm->debug = 0;
@@ -867,13 +941,42 @@ void vm_init(struct VM* vm, char* filename) {
 }
 
 void vm_printValueStack(struct VM* vm) {
-	printf("\n----valuestack\n");
-	for (uint64_t i = 0; i < vm->valueStack.size; i ++) {
+	printf("----valuestack\n");
+	for (uint64_t i = 0; i < vm->valueStack->size; i ++) {
 		printf("[%lli] ", i);
-		exec_print_helper(&vm->valueStack.values[i]);
+		exec_print_helper(&vm->valueStack->values[i]);
 		printf("\n");
 	}
-	printf("----valuestack end\n\n");
+	printf("----valuestack end\n");
+}
+
+void vm_printEnvStack(struct VM* vm) {
+	printf("----envstack [%x]\n", (unsigned int) vm->envStack);
+	for (uint64_t i = 0; i < vm->envStack->size; i ++) {
+		printf("[%lli] %llu", i, vm->envStack->envs[i].stackPos);
+		printf("\n");
+	}
+	printf("----envstack end\n");
+}
+void vm_printEnvStacks(struct VM* vm) {
+	for (uint64_t i = 0; i < vm->callStack->size; i ++) {
+		printf("----envstack [%x]\n", (unsigned int) vm->callStack->values[i].funEnvStack);
+		for (uint64_t j = 0; j < vm->callStack->values[i].funEnvStack->size; j ++) {
+			printf("[%lli] %llu", j, vm->callStack->values[i].funEnvStack->envs[j].stackPos);
+			printf("\n");
+		}
+		printf("----envstack end\n");
+	}
+}
+
+void vm_printCallStack(struct VM* vm) {
+	printf("----callstack\n");
+	for (uint64_t i = 0; i < vm->callStack->size; i ++) {
+		printf("[%lli] ", i);
+		exec_print_helper(&vm->callStack->values[i]);
+		printf("\n");
+	}
+	printf("----callstack end\n");
 }
 
 void vm_disassemble(struct VM* vm) {
@@ -889,8 +992,12 @@ void vm_disassemble(struct VM* vm) {
 
 void vm_free(struct VM* vm) {
 	free(vm->mainMem);
-	valuestack_free(&vm->valueStack);
-	envstack_free(&vm->envStack);
+	valuestack_free(vm->valueStack);
+	valuestack_free(vm->callStack);
+	envstack_free(vm->envStack);
+	free(vm->valueStack);
+	free(vm->callStack);
+	free(vm->envStack);
 }
 
 void vm_exec(struct VM* vm) {
@@ -900,7 +1007,13 @@ void vm_exec(struct VM* vm) {
 	if (vm->debug)
 		chunk_print(&vm->chunk);
 	(*exec_func[vm->chunk.opcode])(vm);
-	// vm_printValueStack(vm);
+	if (vm->debug) {
+		printf("\n");
+		vm_printValueStack(vm);
+		vm_printCallStack(vm);
+		vm_printEnvStacks(vm);
+		printf("\n");
+	}
 }
 
 void vm_run(struct VM* vm) {
@@ -912,7 +1025,7 @@ int main(int argc, char* argv[]) {
 	struct VM vm;
 	vm_init(&vm, "../../data/test.hypc");
 	vm.debug = 0;
-	vm_disassemble(&vm);
+	vm_run(&vm);
 	vm_free(&vm);
 	return 0;
 }

@@ -427,6 +427,7 @@ class Parser(object):
 		self.lexer = Lexer(src)
 		self.token = self.lexer.get_token()
 		self.trace = trace
+		self.in_fun = 0
 
 	def error(self, token, msg):
 		if token.type == NEWLINE:
@@ -473,7 +474,9 @@ class Parser(object):
 				break
 		self.eat_newline_space()
 		self.eat(LBRACE)
+		self.in_fun += 1
 		stmts = self.compound_stmt()
+		self.in_fun -= 1
 		self.eat(RBRACE)
 
 		for i in stmts.stmts:
@@ -777,6 +780,8 @@ class Parser(object):
 
 	# return_stmt : RETURN [expr]
 	def return_stmt(self):
+		if self.in_fun > 0:
+			self.error(self.token, "'return' outside of function");
 		token = self.token
 		self.eat(RETURN)
 		self.eat_space()
