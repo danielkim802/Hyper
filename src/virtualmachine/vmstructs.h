@@ -24,7 +24,7 @@ struct Value {
 	struct Value* arrValue;
 	uint64_t arrLen;
 	uint64_t arrMax;
-	uint8_t inUse;
+	uint8_t valid;
 };
 
 // dynamic array
