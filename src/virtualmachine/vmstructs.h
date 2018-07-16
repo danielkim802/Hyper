@@ -24,7 +24,7 @@ struct Value {
 	struct Value* arrValue;
 	uint64_t arrLen;
 	uint64_t arrMax;
-	uint8_t valid;
+	uint8_t inUse;
 };
 
 // dynamic array
@@ -42,6 +42,7 @@ struct Node {
 	uint8_t max;
 };
 
+// prefix tree
 struct Env {
 	struct Node* head;
 	uint64_t stackPos;

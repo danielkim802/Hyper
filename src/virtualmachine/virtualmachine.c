@@ -265,6 +265,9 @@ void exec_eq(struct VM* vm) {
 			case STRUCT:
 				res.boolValue = value1.structValue == value2.structValue;
 				break;
+			case ARR:
+				res.boolValue = value1.arrValue == value2.arrValue;
+				break;
 			case NIL:
 				res.boolValue = 1;
 				break;
@@ -286,7 +289,8 @@ void exec_add(struct VM* vm) {
 	if ((value1.type != INT && value1.type != FLOAT) || 
 		(value2.type != INT && value2.type != FLOAT))
 		if (!(value1.type == STRING && value2.type == STRING))
-			vmerror_raise(TYPE_ERROR, "Unsupported operand types for '+' operator");
+			if (!(value1.type == ARR && value2.type == ARR))
+				vmerror_raise(TYPE_ERROR, "Unsupported operand types for '+' operator");
 
 	struct Value res;
 	switch (value1.type) {
@@ -328,13 +332,24 @@ void exec_add(struct VM* vm) {
 			strcpy((char*) res.stringValue, (char*) value1.stringValue);
 			strcpy((char*) &res.stringValue[len1], (char*) value2.stringValue);
 			res.stringValue[len1 + len2] = 0;
+			res.stringLen = len1 + len2;
+			break;
+		uint64_t i;
+		case ARR:
+			res = value1;
+			for (i = 0; i < value2.arrLen; i ++)
+				value_arrAppend(&res, &value2.arrValue[i]);
+			value_free(&value2);
 			break;
 		default:
 			break;
 	}
+
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value1);
-	value_free(&value2);
+	if (value1.type != ARR) {
+		value_free(&value1);
+		value_free(&value2);
+	}
 }
 
 void exec_sub(struct VM* vm) {
@@ -538,7 +553,9 @@ void exec_fun_call(struct VM* vm) {
 
 	if (fun.type != FUN)
 		vmerror_raise(TYPE_ERROR, "Operand not callable");
-	if (argc > fun.funArgc)
+	if (fun.funArgc != 0 && argc > fun.funArgc)
+		vmerror_raise(TYPE_ERROR, "Too many arguments in function call");
+	if (fun.funArgc == 0 && argc > 1)
 		vmerror_raise(TYPE_ERROR, "Too many arguments in function call");
 
 	// push new environment to store arguments
@@ -547,11 +564,19 @@ void exec_fun_call(struct VM* vm) {
 	envstack_push(fun.funEnvStack, &env);
 
 	// add argument names and values one by one
-	for (uint64_t i = 0; i < argc; i ++) {
-		struct Value arg;
-		valuestack_pop(vm->valueStack, &arg);
-		envstack_storeName(fun.funEnvStack, fun.funArgs[i]);
-		envstack_assignName(fun.funEnvStack, fun.funArgs[i], &arg);
+	if (fun.funArgc == 0) {
+		struct Value nullVal;
+		valuestack_pop(vm->valueStack, &nullVal);
+
+		if (nullVal.type != NIL)
+			vmerror_raise(TYPE_ERROR, "Function with no arguments must be called with 'null'");
+	} else {
+		for (uint64_t i = 0; i < argc; i ++) {
+			struct Value arg;
+			valuestack_pop(vm->valueStack, &arg);
+			envstack_storeName(fun.funEnvStack, fun.funArgs[i]);
+			envstack_assignName(fun.funEnvStack, fun.funArgs[i], &arg);
+		}
 	}
 
 	// push to call stack and assign return address
@@ -588,9 +613,10 @@ void exec_arr_idx(struct VM* vm) {
 	}
 	struct Value str;
 	str.type = STRING;
-	str.stringValue = malloc(sizeof(uint8_t) * 1);
+	str.stringValue = malloc(sizeof(uint8_t) * 2);
 	str.stringLen = 1;
 	str.stringValue[0] = arr.stringValue[idx.intValue];
+	str.stringValue[1] = 0;
 	valuestack_push(vm->valueStack, &str);
 }
 
@@ -1010,8 +1036,8 @@ void vm_exec(struct VM* vm) {
 	if (vm->debug) {
 		printf("\n");
 		vm_printValueStack(vm);
-		vm_printCallStack(vm);
-		vm_printEnvStacks(vm);
+		// vm_printCallStack(vm);
+		// vm_printEnvStacks(vm);
 		printf("\n");
 	}
 }
@@ -1023,7 +1049,7 @@ void vm_run(struct VM* vm) {
 
 int main(int argc, char* argv[]) {
 	struct VM vm;
-	vm_init(&vm, "../../data/test.hypc");
+	vm_init(&vm,  "../../data/test.hypc");
 	vm.debug = 0;
 	vm_run(&vm);
 	vm_free(&vm);

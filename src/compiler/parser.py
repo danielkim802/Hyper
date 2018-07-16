@@ -780,8 +780,8 @@ class Parser(object):
 
 	# return_stmt : RETURN [expr]
 	def return_stmt(self):
-		if self.in_fun > 0:
-			self.error(self.token, "'return' outside of function");
+		if self.in_fun == 0:
+			self.error(self.token, "outside of function");
 		token = self.token
 		self.eat(RETURN)
 		self.eat_space()
