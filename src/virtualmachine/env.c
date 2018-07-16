@@ -4,19 +4,21 @@
 #include "value.h"
 #include "vmerror.h"
 
-void node_init(struct Node* node, uint8_t c, struct Value* value) {
+void node_init(struct Node* node, uint8_t c, struct Value** value) {
 	node->children = malloc(sizeof(struct Node));
 	node->size = 0;
 	node->max = 1;
 	node->c = c;
-	node->value = value;
+	node->value = *value;
 }
 
 void node_free(struct Node* node) {
 	for (uint8_t i = 0; i < node->size; i ++)
 		node_free(&node->children[i]);
-	if (node->value != NULL)
+	if (node->value != NULL) {
 		value_free(node->value);
+		free(node->value);
+	}
 }
 
 void node_addChild(struct Node* node, struct Node* child) {
@@ -61,14 +63,15 @@ void node_storeName(struct Node* node, uint8_t* name, uint64_t ptr) {
 	node_storeName(&node->children[node->size - 1], name, ptr + 1);
 }
 
-void node_loadName(struct Node* node, uint8_t* name, uint64_t ptr, struct Value* value) {
+void node_loadName(struct Node* node, uint8_t* name, uint64_t ptr, struct Value** value) {
+	struct Value* valueref = *value;
 	if (name[ptr] == 0) {
 		if (node->value == NULL) {
-			value->valid = 0;
+			valueref->valid = 0;
 			return;
 		}
-		*value = *node->value;
-		value->valid = 1;
+		*value = node->value;
+		valueref->valid = 1;
 		return;
 	}
 
@@ -79,17 +82,18 @@ void node_loadName(struct Node* node, uint8_t* name, uint64_t ptr, struct Value*
 		}
 	}
 
-	value->valid = 0;
+	valueref->valid = 0;
 }
 
-void node_assignName(struct Node* node, uint8_t* name, uint64_t ptr, struct Value* value) {
+void node_assignName(struct Node* node, uint8_t* name, uint64_t ptr, struct Value** value) {
+	struct Value* valueref = *value;
 	if (name[ptr] == 0) {
 		if (node->value == NULL) {
-			value->valid = 0;
+			valueref->valid = 0;
 			return;
 		}
-		*node->value = *value;
-		value->valid = 1;
+		node->value = valueref;
+		valueref->valid = 1;
 		return;
 	}
 
@@ -100,7 +104,7 @@ void node_assignName(struct Node* node, uint8_t* name, uint64_t ptr, struct Valu
 		}
 	}
 
-	value->valid = 0;
+	valueref->valid = 0;
 }
 
 void env_init(struct Env* env, uint64_t pos) {
@@ -113,11 +117,11 @@ void env_storeName(struct Env* env, uint8_t* name) {
 	node_storeName(env->head, name, 0);
 }
 
-void env_assignName(struct Env* env, uint8_t* name, struct Value* value) {
+void env_assignName(struct Env* env, uint8_t* name, struct Value** value) {
 	node_assignName(env->head, name, 0, value);
 }
 
-void env_loadName(struct Env* env, uint8_t* name, struct Value* value) {
+void env_loadName(struct Env* env, uint8_t* name, struct Value** value) {
 	node_loadName(env->head, name, 0, value);
 }
 

@@ -6,77 +6,79 @@
 #include "vmerror.h"
 
 void exec_and(struct VM* vm) {
-	struct Value value1;
-	struct Value value2;
+	struct Value* value1;
+	struct Value* value2;
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
-	if (value1.type != BOOL || value2.type != BOOL)
+	if (value1->type != BOOL || value2->type != BOOL)
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for 'and' operator");
 
-	struct Value res;
-	res.type = BOOL;
-	res.boolValue = value1.boolValue && value2.boolValue;
+	struct Value* res = value_make();
+	res->type = BOOL;
+	res->boolValue = value1->boolValue && value2->boolValue;
+	res->inUse = 0;
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value1);
-	value_free(&value2);
+	value_destroy2(&value1, &value2);
 }
 
 void exec_or(struct VM* vm) {
-	struct Value value1;
-	struct Value value2;
+	struct Value* value1;
+	struct Value* value2;
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
-	if (value1.type != BOOL || value2.type != BOOL)
+	if (value1->type != BOOL || value2->type != BOOL)
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for 'or' operator");
 
-	struct Value res;
-	res.type = BOOL;
-	res.boolValue = value1.boolValue || value2.boolValue;
+	struct Value* res = value_make();
+	res->type = BOOL;
+	res->boolValue = value1->boolValue || value2->boolValue;
+	res->inUse = 0;
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value1);
-	value_free(&value2);
+	value_destroy2(&value1, &value2);
 }
 
 void exec_not(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	valuestack_pop(vm->valueStack, &value);
 
-	if (value.type != BOOL)
+	if (value->type != BOOL)
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for 'not' operator");
 
-	struct Value res;
-	res.type = BOOL;
-	res.boolValue = !value.boolValue;
+	struct Value* res = value_make();
+	res->type = BOOL;
+	res->boolValue = !value->boolValue;
+	res->inUse = 0;
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value);
+	value_destroy(&value);
 }
 
 void exec_lt(struct VM* vm) {
-	struct Value value1;
-	struct Value value2;
+	struct Value* value1;
+	struct Value* value2;
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
-	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT))
+	if ((value1->type != INT && value1->type != FLOAT) || 
+		(value2->type != INT && value2->type != FLOAT))
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '<' operator");
 
-	struct Value res;
-	res.type = BOOL;
-	switch (value1.type) {
+	struct Value* res = value_make();
+	res->type = BOOL;
+	res->inUse = 0;
+	switch (value1->type) {
 		case INT:
-			switch(value2.type) {
-				case INT: res.boolValue = value2.intValue < value1.intValue; break;
-				case FLOAT: res.boolValue = value2.floatValue < value1.intValue; break;
+			switch(value2->type) {
+				case INT: res->boolValue = value2->intValue < value1->intValue; break;
+				case FLOAT: res->boolValue = value2->floatValue < value1->intValue; break;
 				default: break;
 			}
 			break;
 		case FLOAT:
-			switch(value2.type) {
-				case INT: res.boolValue = value2.intValue < value1.floatValue; break;
-				case FLOAT: res.boolValue = value2.floatValue < value1.floatValue; break;
+			switch(value2->type) {
+				case INT: res->boolValue = value2->intValue < value1->floatValue; break;
+				case FLOAT: res->boolValue = value2->floatValue < value1->floatValue; break;
 				default: break;
 			}
 			break;
@@ -84,34 +86,34 @@ void exec_lt(struct VM* vm) {
 			break;
 	}
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value1);
-	value_free(&value2);
+	value_destroy2(&value1, &value2);
 }
 
 void exec_lte(struct VM* vm) {
-	struct Value value1;
-	struct Value value2;
+	struct Value* value1;
+	struct Value* value2;
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
-	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT))
+	if ((value1->type != INT && value1->type != FLOAT) || 
+		(value2->type != INT && value2->type != FLOAT))
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '<=' operator");
 
-	struct Value res;
-	res.type = BOOL;
-	switch (value1.type) {
+	struct Value* res = value_make();
+	res->type = BOOL;
+	res->inUse = 0;
+	switch (value1->type) {
 		case INT:
-			switch(value2.type) {
-				case INT: res.boolValue = value2.intValue <= value1.intValue; break;
-				case FLOAT: res.boolValue = value2.floatValue <= value1.intValue; break;
+			switch(value2->type) {
+				case INT: res->boolValue = value2->intValue <= value1->intValue; break;
+				case FLOAT: res->boolValue = value2->floatValue <= value1->intValue; break;
 				default: break;
 			}
 			break;
 		case FLOAT:
-			switch(value2.type) {
-				case INT: res.boolValue = value2.intValue <= value1.floatValue; break;
-				case FLOAT: res.boolValue = value2.floatValue <= value1.floatValue; break;
+			switch(value2->type) {
+				case INT: res->boolValue = value2->intValue <= value1->floatValue; break;
+				case FLOAT: res->boolValue = value2->floatValue <= value1->floatValue; break;
 				default: break;
 			}
 			break;
@@ -119,34 +121,34 @@ void exec_lte(struct VM* vm) {
 			break;
 	}
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value1);
-	value_free(&value2);
+	value_destroy2(&value1, &value2);
 }
 
 void exec_gt(struct VM* vm) {
-	struct Value value1;
-	struct Value value2;
+	struct Value* value1;
+	struct Value* value2;
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
-	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT))
+	if ((value1->type != INT && value1->type != FLOAT) || 
+		(value2->type != INT && value2->type != FLOAT))
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '>' operator");
 
-	struct Value res;
-	res.type = BOOL;
-	switch (value1.type) {
+	struct Value* res = value_make();
+	res->type = BOOL;
+	res->inUse = 0;
+	switch (value1->type) {
 		case INT:
-			switch(value2.type) {
-				case INT: res.boolValue = value2.intValue > value1.intValue; break;
-				case FLOAT: res.boolValue = value2.floatValue > value1.intValue; break;
+			switch(value2->type) {
+				case INT: res->boolValue = value2->intValue > value1->intValue; break;
+				case FLOAT: res->boolValue = value2->floatValue > value1->intValue; break;
 				default: break;
 			}
 			break;
 		case FLOAT:
-			switch(value2.type) {
-				case INT: res.boolValue = value2.intValue > value1.floatValue; break;
-				case FLOAT: res.boolValue = value2.floatValue > value1.floatValue; break;
+			switch(value2->type) {
+				case INT: res->boolValue = value2->intValue > value1->floatValue; break;
+				case FLOAT: res->boolValue = value2->floatValue > value1->floatValue; break;
 				default: break;
 			}
 			break;
@@ -154,34 +156,34 @@ void exec_gt(struct VM* vm) {
 			break;
 	}
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value1);
-	value_free(&value2);
+	value_destroy2(&value1, &value2);
 }
 
 void exec_gte(struct VM* vm) {
-	struct Value value1;
-	struct Value value2;
+	struct Value* value1;
+	struct Value* value2;
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
-	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT))
+	if ((value1->type != INT && value1->type != FLOAT) || 
+		(value2->type != INT && value2->type != FLOAT))
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '>=' operator");
 
-	struct Value res;
-	res.type = BOOL;
-	switch (value1.type) {
+	struct Value* res = value_make();
+	res->type = BOOL;
+	res->inUse = 0;
+	switch (value1->type) {
 		case INT:
-			switch(value2.type) {
-				case INT: res.boolValue = value2.intValue >= value1.intValue; break;
-				case FLOAT: res.boolValue = value2.floatValue >= value1.intValue; break;
+			switch(value2->type) {
+				case INT: res->boolValue = value2->intValue >= value1->intValue; break;
+				case FLOAT: res->boolValue = value2->floatValue >= value1->intValue; break;
 				default: break;
 			}
 			break;
 		case FLOAT:
-			switch(value2.type) {
-				case INT: res.boolValue = value2.intValue >= value1.floatValue; break;
-				case FLOAT: res.boolValue = value2.floatValue >= value1.floatValue; break;
+			switch(value2->type) {
+				case INT: res->boolValue = value2->intValue >= value1->floatValue; break;
+				case FLOAT: res->boolValue = value2->floatValue >= value1->floatValue; break;
 				default: break;
 			}
 			break;
@@ -189,134 +191,137 @@ void exec_gte(struct VM* vm) {
 			break;
 	}
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value1);
-	value_free(&value2);
+	value_destroy2(&value1, &value2);
 }
 
 void exec_ne(struct VM* vm) {
-	struct Value value1;
-	struct Value value2;
+	struct Value* value1;
+	struct Value* value2;
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
-	struct Value res;
-	res.type = BOOL;
-	if (value1.type != value2.type) {
-		res.boolValue = 1;
+	struct Value* res = value_make();
+	res->type = BOOL;
+	res->inUse = 0;
+	if (value1->type != value2->type) {
+		res->boolValue = 1;
 	} else {
-		switch (value1.type) {
+		switch (value1->type) {
 			case INT:
-				res.boolValue = value1.intValue != value2.intValue;
+				res->boolValue = value1->intValue != value2->intValue;
 				break;
 			case FLOAT:
-				res.boolValue = value1.floatValue != value2.floatValue;
+				res->boolValue = value1->floatValue != value2->floatValue;
 				break;
 			case STRING:
-				res.boolValue = strcmp((char*) value1.stringValue, (char*) value2.stringValue);
+				res->boolValue = strcmp((char*) value1->stringValue, (char*) value2->stringValue);
 				break;
 			case BOOL:
-				res.boolValue = (value1.boolValue && value2.boolValue) == 0;
+				res->boolValue = !value1->boolValue != !value2->boolValue;
 				break;
 			case FUN:
-				res.boolValue = value1.funValue != value2.funValue;
+				res->boolValue = value1 != value2;
 				break;
 			case STRUCT:
-				res.boolValue = value1.structValue != value2.structValue;
+				res->boolValue = value1 != value2;
+				break;
+			case ARR:
+				res->boolValue = value1 != value2;
 				break;
 			case NIL:
-				res.boolValue = 0;
+				res->boolValue = 0;
 				break;
 			default:
 				break;
 		}
 	}
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value1);
-	value_free(&value2);
+	value_destroy2(&value1, &value2);
 }
 
 void exec_eq(struct VM* vm) {
-	struct Value value1;
-	struct Value value2;
+	struct Value* value1;
+	struct Value* value2;
 	valuestack_pop(vm->valueStack, &value1);
 	valuestack_pop(vm->valueStack, &value2);
 
-	struct Value res;
-	res.type = BOOL;
-	if (value1.type != value2.type) {
-		res.boolValue = 0;
+	struct Value* res = value_make();
+	res->type = BOOL;
+	res->inUse = 0;
+	if (value1->type != value2->type) {
+		res->boolValue = 0;
 	} else {
-		switch (value1.type) {
+		switch (value1->type) {
 			case INT:
-				res.boolValue = value1.intValue == value2.intValue;
+				res->boolValue = value1->intValue == value2->intValue;
 				break;
 			case FLOAT:
-				res.boolValue = value1.floatValue == value2.floatValue;
+				res->boolValue = value1->floatValue == value2->floatValue;
 				break;
 			case STRING:
-				res.boolValue = !strcmp((char*) value1.stringValue, (char*) value2.stringValue);
+				res->boolValue = !strcmp((char*) value1->stringValue, (char*) value2->stringValue);
 				break;
 			case BOOL:
-				res.boolValue = (value1.boolValue && value2.boolValue) != 0;
+				res->boolValue = !value1->boolValue == !value2->boolValue;
 				break;
 			case FUN:
-				res.boolValue = value1.funValue == value2.funValue;
+				res->boolValue = value1 == value2;
 				break;
 			case STRUCT:
-				res.boolValue = value1.structValue == value2.structValue;
+				res->boolValue = value1 == value2;
 				break;
 			case ARR:
-				res.boolValue = value1.arrValue == value2.arrValue;
+				res->boolValue = value1 == value2;
 				break;
 			case NIL:
-				res.boolValue = 1;
+				res->boolValue = 1;
 				break;
 			default:
 				break;
 		}
 	}
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value1);
-	value_free(&value2);
+	value_destroy2(&value1, &value2);
 }
 
 void exec_add(struct VM* vm) {
-	struct Value value1;
-	struct Value value2;
+	struct Value* value1;
+	struct Value* value2;
 	valuestack_pop(vm->valueStack, &value2);
 	valuestack_pop(vm->valueStack, &value1);
 
-	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT))
-		if (!(value1.type == STRING && value2.type == STRING))
-			if (!(value1.type == ARR && value2.type == ARR))
+	if ((value1->type != INT && value1->type != FLOAT) || 
+		(value2->type != INT && value2->type != FLOAT))
+		if (!(value1->type == STRING && value2->type == STRING))
+			if (!(value1->type == ARR && value2->type == ARR))
 				vmerror_raise(TYPE_ERROR, "Unsupported operand types for '+' operator");
 
-	struct Value res;
-	switch (value1.type) {
+	struct Value* res = value_make();
+	res->inUse = 0;
+	switch (value1->type) {
 		case INT:
-			switch(value2.type) {
+			switch(value2->type) {
 				case INT:
-					res.type = INT;
-					res.intValue = value1.intValue + value2.intValue;
+					res->type = INT;
+					res->intValue = value1->intValue + value2->intValue;
 					break;
 				case FLOAT:
-					res.type = FLOAT;
-					res.floatValue = value1.intValue + value2.floatValue;
+					res->type = FLOAT;
+					res->floatValue = value1->intValue + value2->floatValue;
 					break;
 				default:
 					break;
 			}
 			break;
 		case FLOAT:
-			switch(value2.type) {
+			switch(value2->type) {
 				case INT: 
-					res.type = FLOAT;
-					res.floatValue = value1.floatValue + value2.intValue;
+					res->type = FLOAT;
+					res->floatValue = value1->floatValue + value2->intValue;
 					break;
 				case FLOAT:
-					res.type = FLOAT;
-					res.floatValue = value1.floatValue + value2.floatValue;
+					res->type = FLOAT;
+					res->floatValue = value1->floatValue + value2->floatValue;
 					break;
 				default:
 					break;
@@ -325,68 +330,69 @@ void exec_add(struct VM* vm) {
 		uint64_t len1;
 		uint64_t len2;
 		case STRING:
-			res.type = STRING;
-			len1 = strlen((char*) value1.stringValue);
-			len2 = strlen((char*) value2.stringValue);
-			res.stringValue = malloc(sizeof(uint8_t) * (len1 + len2 + 1));
-			strcpy((char*) res.stringValue, (char*) value1.stringValue);
-			strcpy((char*) &res.stringValue[len1], (char*) value2.stringValue);
-			res.stringValue[len1 + len2] = 0;
-			res.stringLen = len1 + len2;
+			res->type = STRING;
+			len1 = strlen((char*) value1->stringValue);
+			len2 = strlen((char*) value2->stringValue);
+			res->stringValue = malloc(sizeof(uint8_t) * (len1 + len2 + 1));
+			strcpy((char*) res->stringValue, (char*) value1->stringValue);
+			strcpy((char*) &res->stringValue[len1], (char*) value2->stringValue);
+			res->stringValue[len1 + len2] = 0;
+			res->stringLen = len1 + len2;
 			break;
 		uint64_t i;
 		case ARR:
+			free(res);
 			res = value1;
-			for (i = 0; i < value2.arrLen; i ++)
-				value_arrAppend(&res, &value2.arrValue[i]);
-			value_free(&value2);
+			for (i = 0; i < value2->arrLen; i ++)
+				value_arrAppend(&res, &value2->arrValue[i]);
+			free(value2->arrValue);
+			free(value2);
 			break;
 		default:
 			break;
 	}
 
 	valuestack_push(vm->valueStack, &res);
-	if (value1.type != ARR) {
-		value_free(&value1);
-		value_free(&value2);
-	}
+	if (value1->type != ARR)
+		value_destroy2(&value1, &value2);
 }
 
 void exec_sub(struct VM* vm) {
-	struct Value value1;
-	struct Value value2;
+	struct Value* value1;
+	struct Value* value2;
 	valuestack_pop(vm->valueStack, &value2);
 	valuestack_pop(vm->valueStack, &value1);
 
-	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT))
+	if ((value1->type != INT && value1->type != FLOAT) || 
+		(value2->type != INT && value2->type != FLOAT))
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '-' operator");
 
-	struct Value res;
-	switch (value1.type) {
+	struct Value* res = value_make();
+	res->inUse = 0;
+	switch (value1->type) {
 		case INT:
-			switch(value2.type) {
+			switch(value2->type) {
 				case INT:
-					res.type = INT;
-					res.intValue = value1.intValue - value2.intValue;
+					res->type = INT;
+					res->intValue = value1->intValue - value2->intValue;
 					break;
 				case FLOAT:
-					res.type = FLOAT;
-					res.floatValue = value1.intValue - value2.floatValue;
+					res->type = FLOAT;
+					res->floatValue = value1->intValue - value2->floatValue;
 					break;
 				default:
 					break;
 			}
 			break;
 		case FLOAT:
-			switch(value2.type) {
+			switch(value2->type) {
 				case INT: 
-					res.type = FLOAT;
-					res.floatValue = value1.floatValue - value2.intValue;
+					res->type = FLOAT;
+					res->floatValue = value1->floatValue - value2->intValue;
 					break;
 				case FLOAT:
-					res.type = FLOAT;
-					res.floatValue = value1.floatValue - value2.floatValue;
+					res->type = FLOAT;
+					res->floatValue = value1->floatValue - value2->floatValue;
 					break;
 				default:
 					break;
@@ -396,45 +402,45 @@ void exec_sub(struct VM* vm) {
 			break;
 	}
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value1);
-	value_free(&value2);
+	value_destroy2(&value1, &value2);
 }
 
 void exec_mul(struct VM* vm) {
-	struct Value value1;
-	struct Value value2;
+	struct Value* value1;
+	struct Value* value2;
 	valuestack_pop(vm->valueStack, &value2);
 	valuestack_pop(vm->valueStack, &value1);
 
-	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT))
+	if ((value1->type != INT && value1->type != FLOAT) || 
+		(value2->type != INT && value2->type != FLOAT))
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '*' operator");
 
-	struct Value res;
-	switch (value1.type) {
+	struct Value* res = value_make();
+	res->inUse = 0;
+	switch (value1->type) {
 		case INT:
-			switch(value2.type) {
+			switch(value2->type) {
 				case INT:
-					res.type = INT;
-					res.intValue = value1.intValue * value2.intValue;
+					res->type = INT;
+					res->intValue = value1->intValue * value2->intValue;
 					break;
 				case FLOAT:
-					res.type = FLOAT;
-					res.floatValue = value1.intValue * value2.floatValue;
+					res->type = FLOAT;
+					res->floatValue = value1->intValue * value2->floatValue;
 					break;
 				default:
 					break;
 			}
 			break;
 		case FLOAT:
-			switch(value2.type) {
+			switch(value2->type) {
 				case INT: 
-					res.type = FLOAT;
-					res.floatValue = value1.floatValue * value2.intValue;
+					res->type = FLOAT;
+					res->floatValue = value1->floatValue * value2->intValue;
 					break;
 				case FLOAT:
-					res.type = FLOAT;
-					res.floatValue = value1.floatValue * value2.floatValue;
+					res->type = FLOAT;
+					res->floatValue = value1->floatValue * value2->floatValue;
 					break;
 				default:
 					break;
@@ -444,45 +450,45 @@ void exec_mul(struct VM* vm) {
 			break;
 	}
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value1);
-	value_free(&value2);
+	value_destroy2(&value1, &value2);
 }
 
 void exec_div(struct VM* vm) {
-	struct Value value1;
-	struct Value value2;
+	struct Value* value1;
+	struct Value* value2;
 	valuestack_pop(vm->valueStack, &value2);
 	valuestack_pop(vm->valueStack, &value1);
 
-	if ((value1.type != INT && value1.type != FLOAT) || 
-		(value2.type != INT && value2.type != FLOAT))
+	if ((value1->type != INT && value1->type != FLOAT) || 
+		(value2->type != INT && value2->type != FLOAT))
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '/' operator");
 
-	struct Value res;
-	switch (value1.type) {
+	struct Value* res = value_make();
+	res->inUse = 0;
+	switch (value1->type) {
 		case INT:
-			switch(value2.type) {
+			switch(value2->type) {
 				case INT:
-					res.type = INT;
-					res.intValue = value1.intValue / value2.intValue;
+					res->type = INT;
+					res->intValue = value1->intValue / value2->intValue;
 					break;
 				case FLOAT:
-					res.type = FLOAT;
-					res.floatValue = value1.intValue / value2.floatValue;
+					res->type = FLOAT;
+					res->floatValue = value1->intValue / value2->floatValue;
 					break;
 				default:
 					break;
 			}
 			break;
 		case FLOAT:
-			switch(value2.type) {
+			switch(value2->type) {
 				case INT: 
-					res.type = FLOAT;
-					res.floatValue = value1.floatValue / value2.intValue;
+					res->type = FLOAT;
+					res->floatValue = value1->floatValue / value2->intValue;
 					break;
 				case FLOAT:
-					res.type = FLOAT;
-					res.floatValue = value1.floatValue / value2.floatValue;
+					res->type = FLOAT;
+					res->floatValue = value1->floatValue / value2->floatValue;
 					break;
 				default:
 					break;
@@ -492,100 +498,103 @@ void exec_div(struct VM* vm) {
 			break;
 	}
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value1);
-	value_free(&value2);
+	value_destroy2(&value1, &value2);
 }
 
 void exec_plus(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	valuestack_pop(vm->valueStack, &value);
 
-	if (value.type != INT && value.type != FLOAT)
+	if (value->type != INT && value->type != FLOAT)
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '+' operator");
 
-	struct Value res;
-	switch (value.type) {
+	struct Value* res = value_make();
+	res->inUse = 0;
+	switch (value->type) {
 		case INT:
-			res.type = INT;
-			res.intValue = +value.intValue;
+			res->type = INT;
+			res->intValue = +value->intValue;
 			break;
 		case FLOAT:
-			res.type = FLOAT;
-			res.floatValue = +value.floatValue;
+			res->type = FLOAT;
+			res->floatValue = +value->floatValue;
 			break;
 		default:
 			break;
 	}
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value);
+	value_destroy(&value);
 }
 
 void exec_minus(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	valuestack_pop(vm->valueStack, &value);
 
-	if (value.type != INT && value.type != FLOAT)
+	if (value->type != INT && value->type != FLOAT)
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '-' operator");
 
-	struct Value res;
-	switch (value.type) {
+	struct Value* res = value_make();
+	res->inUse = 0;
+	switch (value->type) {
 		case INT:
-			res.type = INT;
-			res.intValue = -value.intValue;
+			res->type = INT;
+			res->intValue = -value->intValue;
 			break;
 		case FLOAT:
-			res.type = FLOAT;
-			res.floatValue = -value.floatValue;
+			res->type = FLOAT;
+			res->floatValue = -value->floatValue;
 			break;
 		default:
 			break;
 	}
 	valuestack_push(vm->valueStack, &res);
-	value_free(&value);
+	value_destroy(&value);
 }
 
 void exec_fun_call(struct VM* vm) {
 	// get arg count, return address, and setup vm
 	uint64_t argc = vm->chunk.uintArgs[0];
 	uint64_t returnAddr = vm->chunk.uintArgs[1];
-	struct Value fun;
+	struct Value* fun;
 	valuestack_pop(vm->valueStack, &fun);
 
-	if (fun.type != FUN)
+	if (fun->type != FUN)
 		vmerror_raise(TYPE_ERROR, "Operand not callable");
-	if (fun.funArgc != 0 && argc > fun.funArgc)
+	if (fun->funArgc != 0 && argc > fun->funArgc)
 		vmerror_raise(TYPE_ERROR, "Too many arguments in function call");
-	if (fun.funArgc == 0 && argc > 1)
+	if (fun->funArgc == 0 && argc > 1)
 		vmerror_raise(TYPE_ERROR, "Too many arguments in function call");
 
 	// push new environment to store arguments
 	struct Env env;
 	env_init(&env, vm->valueStack->size - argc);
-	envstack_push(fun.funEnvStack, &env);
+	envstack_push(fun->funEnvStack, &env);
 
 	// add argument names and values one by one
-	if (fun.funArgc == 0) {
-		struct Value nullVal;
+	if (fun->funArgc == 0) {
+		struct Value* nullVal;
 		valuestack_pop(vm->valueStack, &nullVal);
 
-		if (nullVal.type != NIL)
+		if (nullVal->type != NIL)
 			vmerror_raise(TYPE_ERROR, "Function with no arguments must be called with 'null'");
+		
+		value_destroy(&nullVal);
 	} else {
 		for (uint64_t i = 0; i < argc; i ++) {
-			struct Value arg;
+			struct Value* arg;
 			valuestack_pop(vm->valueStack, &arg);
-			envstack_storeName(fun.funEnvStack, fun.funArgs[i]);
-			envstack_assignName(fun.funEnvStack, fun.funArgs[i], &arg);
+			envstack_storeName(fun->funEnvStack, fun->funArgs[i]);
+			envstack_assignName(fun->funEnvStack, fun->funArgs[i], &arg);
 		}
 	}
 
 	// push to call stack and assign return address
-	fun.funReturn = returnAddr;
+	fun->funReturn = returnAddr;
 	valuestack_push(vm->callStack, &fun);
 
 	// set pc to function location and set current environment stack
-	vm->envStack = fun.funEnvStack;
-	vm->pc = fun.funValue;
+	vm->envStack = fun->funEnvStack;
+	vm->pc = fun->funValue;
 }
 
 void exec_get_attr(struct VM* vm) {
@@ -593,68 +602,69 @@ void exec_get_attr(struct VM* vm) {
 }
 
 void exec_arr_idx(struct VM* vm) {
-	struct Value arr;
-	struct Value idx;
+	struct Value* arr;
+	struct Value* idx;
 	valuestack_pop(vm->valueStack, &idx);
 	valuestack_pop(vm->valueStack, &arr);
 
-	if (arr.type != ARR && arr.type != STRING)
+	if (arr->type != ARR && arr->type != STRING)
 		vmerror_raise(TYPE_ERROR, "Unsupported operand type for '[ ]' operator");
-	if (idx.type != INT) 
+	if (idx->type != INT) 
 		vmerror_raise(INDEX_ERROR, "Index must be an integer");
-	if (arr.type == ARR && (idx.intValue >= arr.arrLen || idx.intValue < 0))
+	if (arr->type == ARR && (idx->intValue >= arr->arrLen || idx->intValue < 0))
 		vmerror_raise(INDEX_ERROR, "Index out of range");
-	if (arr.type == STRING && (idx.intValue >= arr.stringLen || idx.intValue < 0))
+	if (arr->type == STRING && (idx->intValue >= arr->stringLen || idx->intValue < 0))
 		vmerror_raise(INDEX_ERROR, "Index out of range");
 
-	if (arr.type == ARR) {
-		valuestack_push(vm->valueStack, &arr.arrValue[idx.intValue]);
+	if (arr->type == ARR) {
+		valuestack_push(vm->valueStack, &arr->arrValue[idx->intValue]);
 		return;
 	}
-	struct Value str;
-	str.type = STRING;
-	str.stringValue = malloc(sizeof(uint8_t) * 2);
-	str.stringLen = 1;
-	str.stringValue[0] = arr.stringValue[idx.intValue];
-	str.stringValue[1] = 0;
+	struct Value* str;
+	str->type = STRING;
+	str->stringValue = malloc(sizeof(uint8_t) * 2);
+	str->stringLen = 1;
+	str->stringValue[0] = arr.stringValue[idx.intValue];
+	str->stringValue[1] = 0;
 	valuestack_push(vm->valueStack, &str);
 }
 
 void exec_load_int(struct VM* vm) {
-	struct Value value;
-	value.type = INT;
-	value.intValue = vm->chunk.intArg;
+	struct Value* value;
+	value->type = INT;
+	value->intValue = vm->chunk.intArg;
+	value->inUse = 0;
 	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_float(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	value.type = FLOAT;
 	value.floatValue = vm->chunk.floatArg;
 	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_name(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	envstack_loadName(vm->envStack, vm->chunk.stringArg, &value);
 	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_bool(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	value.type = BOOL;
 	value.boolValue = vm->chunk.boolArg;
 	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_null(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	value.type = NIL;
 	valuestack_push(vm->valueStack, &value);
 }
 
 void exec_load_string(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	value.type = STRING;
 	value.stringValue = vm->chunk.stringArg;
 	value.stringLen = strlen((char*) value.stringValue);
@@ -662,7 +672,7 @@ void exec_load_string(struct VM* vm) {
 }
 
 void exec_make_fun(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	value.type = FUN;
 	value.funValue = vm->chunk.uintArgs[0];
 	value.funArgc = vm->chunk.uintArgs[1];
@@ -678,18 +688,18 @@ void exec_make_struct(struct VM* vm) {
 }
 
 void exec_make_arr(struct VM* vm) {
-	struct Value value;
-	value.type = ARR;
-	value.arrLen = vm->chunk.uintArg;
+	struct Value* value;
+	value->type = ARR;
+	value->arrLen = vm->chunk.uintArg;
 
 	uint64_t max = 1;
-	while (max < value.arrLen)
+	while (max < value->arrLen)
 		max *= 2;
 
-	value.arrValue = malloc(sizeof(struct Value) * max);
+	value->arrValue = malloc(sizeof(struct Value*) * max);
 
-	for (uint64_t i = 0; i < value.arrLen; i ++)
-		valuestack_pop(vm->valueStack, &value.arrValue[i]);
+	for (uint64_t i = 0; i < value->arrLen; i ++)
+		valuestack_pop(vm->valueStack, &value->arrValue[i]);
 	valuestack_push(vm->valueStack, &value);
 }
 
@@ -703,7 +713,7 @@ void exec_pop_env(struct VM* vm) {
 	struct Env env;
 	envstack_pop(vm->envStack, &env);
 	while (vm->valueStack->size > env.stackPos) {
-		struct Value value;
+		struct Value* value;
 		valuestack_pop(vm->valueStack, &value);
 		value_free(&value);
 	}
@@ -711,13 +721,13 @@ void exec_pop_env(struct VM* vm) {
 }
 
 void exec_assign_name(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	valuestack_pop(vm->valueStack, &value);
 	envstack_assignName(vm->envStack, vm->chunk.stringArg, &value);
 }
 
 void exec_store_arr(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	struct Value idx;
 	struct Value arr;
 	valuestack_pop(vm->valueStack, &arr);
@@ -754,7 +764,7 @@ void exec_return(struct VM* vm) {
 		struct Env env;
 		envstack_pop(vm->envStack, &env);
 		while (vm->valueStack->size > env.stackPos) {
-			struct Value value;
+			struct Value* value;
 			valuestack_pop(vm->valueStack, &value);
 			value_free(&value);
 		}
@@ -765,7 +775,7 @@ void exec_return(struct VM* vm) {
 	struct Env argEnv;
 	envstack_pop(vm->envStack, &argEnv);
 	while (vm->valueStack->size > argEnv.stackPos) {
-		struct Value value;
+		struct Value* value;
 		valuestack_pop(vm->valueStack, &value);
 		value_free(&value);
 	}
@@ -781,7 +791,8 @@ void exec_return(struct VM* vm) {
 	vm->pc = returnFromFun.funReturn;
 }
 
-void exec_print_helper(struct Value* value) {
+void exec_print_helper(struct Value** value) {
+	struct Value* value = *value;
 	switch (value->type) {
 		case INT:
 			printf("%lli", value->intValue);
@@ -822,14 +833,14 @@ void exec_print_helper(struct Value* value) {
 }
 
 void exec_print(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	valuestack_pop(vm->valueStack, &value);
 	exec_print_helper(&value);
 	printf("\n");
 }
 
 void exec_btrue(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	valuestack_pop(vm->valueStack, &value);
 
 	if (value.type != BOOL)
@@ -841,7 +852,7 @@ void exec_btrue(struct VM* vm) {
 }
 
 void exec_bfalse(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	valuestack_pop(vm->valueStack, &value);
 
 	if (value.type != BOOL)
@@ -861,18 +872,19 @@ void exec_halt(struct VM* vm) {
 }
 
 void exec_len_arr(struct VM* vm) {
-	struct Value value;
+	struct Value* value;
 	valuestack_pop(vm->valueStack, &value);
 
 	if (value.type != ARR && value.type != STRING)
 		vmerror_raise(TYPE_ERROR, "Unsupported length operand");
 
-	struct Value res;
-	res.type = INT;
+	struct Value* res = value_make();
+	res->inUse = 0;
+	res->type = INT;
 	if (value.type == ARR)
-		res.intValue = value.arrLen;
+		res->intValue = value.arrLen;
 	if (value.type == STRING)
-		res.intValue = value.stringLen;
+		res->intValue = value.stringLen;
 	valuestack_push(vm->valueStack, &res);
 }
 

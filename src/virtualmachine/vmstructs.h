@@ -21,15 +21,16 @@ struct Value {
 	uint8_t** funArgs;
 	uint64_t funReturn;
 	struct Env* structValue;
-	struct Value* arrValue;
+	struct Value** arrValue;
 	uint64_t arrLen;
 	uint64_t arrMax;
+	uint8_t valid;
 	uint8_t inUse;
 };
 
 // dynamic array
 struct ValueStack {
-	struct Value* values;
+	struct Value** values;
 	uint64_t size;
 	uint64_t max;
 };
