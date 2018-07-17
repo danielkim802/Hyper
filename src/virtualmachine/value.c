@@ -8,7 +8,7 @@ struct Value* value_make(enum Type type) {
 	struct Value* value = malloc(sizeof(struct Value));
 	value->type = type;
 	value->marked = 0;
-	// TODO: add to garbage collector
+	garbagecollector_addValue(value_gc, value);
 	return value;
 }
 
@@ -67,7 +67,7 @@ void value_print(struct Value* value) {
 			printf(value->boolValue ? "true" : "false");
 			break;
 		case FUN:
-			printf("fun [0x%llx]", value->funValue);
+			printf("fun <0x%llx>", value->funValue);
 			break;
 		case STRUCT:
 			printf("struct");

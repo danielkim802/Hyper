@@ -1,6 +1,9 @@
 #ifndef VMSTRUCTS_H
 #define VMSTRUCTS_H
 
+#include <stdint.h>
+#include "chunk.h"
+
 enum Type {
 	INT, FLOAT, STRING, BOOL, FUN, STRUCT, NIL, ARR
 };
@@ -53,6 +56,28 @@ struct EnvStack {
 	struct Env* envs;
 	uint64_t size;
 	uint64_t max;
+};
+
+struct GarbageCollector {
+	struct Value** values;
+	uint64_t size;
+	uint64_t max;
+};
+
+// virtual machine
+struct VM {
+	uint8_t* mainMem;
+	uint64_t mainMemSize;
+	struct ValueStack* valueStack;
+	struct ValueStack* callStack;
+	struct EnvStack* envStack;
+	struct GarbageCollector* gc;
+	struct Chunk chunk;
+	uint64_t pc;
+	uint8_t halt;
+	uint8_t debug;
+	uint64_t cleanPeriod;
+	uint64_t lastCleaned;
 };
 
 #endif /* VMSTRUCTS_H */

@@ -48,10 +48,11 @@ void node_storeName(struct Node* node, uint8_t* name, uint64_t ptr) {
 		if (node->value != NULL) {
 			char* msg_prefix = "Name '";
 			char* msg_postfix = "' already declared";
-			char* msg = malloc(sizeof(char) * (strlen(msg_prefix) + strlen((char*) name) + strlen(msg_postfix)));
+			char* msg = malloc(sizeof(char) * (strlen(msg_prefix) + strlen((char*) name) + strlen(msg_postfix) + 1));
 			strcpy(msg, msg_prefix);
 			strcpy(&msg[strlen(msg_prefix)], (char*) name);
 			strcpy(&msg[strlen(msg_prefix) + strlen((char*) name)], msg_postfix);
+			msg[strlen(msg)] = 0;
 			vmerror_raise(NAME_ERROR, msg);
 		}
 		node->value = value_make(NIL);

@@ -2,6 +2,9 @@
 #define VALUE_H
 
 #include "vmstructs.h"
+#include "garbagecollector.h"
+
+struct GarbageCollector* value_gc;
 
 struct Value* value_make(enum Type type);
 

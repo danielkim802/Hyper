@@ -5,5 +5,6 @@
 #include "valuestack.h"
 #include "env.h"
 #include "envstack.h"
+#include "garbagecollector.h"
 
 #endif /* VMUTILS_H */

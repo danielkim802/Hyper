@@ -59,6 +59,7 @@ struct Value* envstack_loadName(struct EnvStack* es, uint8_t* name) {
 	strcpy(msg, msg_prefix);
 	strcpy(&msg[strlen(msg_prefix)], (char*) name);
 	msg[strlen(msg_prefix) + strlen((char*) name)] = '\'';
+	msg[strlen(msg_prefix) + strlen((char*) name) + 1] = 0;
 	vmerror_raise(NAME_ERROR, msg);
 	return NULL;
 }
@@ -79,6 +80,7 @@ void envstack_assignName(struct EnvStack* es, uint8_t* name, struct Value* value
 	strcpy(msg, msg_prefix);
 	strcpy(&msg[strlen(msg_prefix)], (char*) name);
 	msg[strlen(msg_prefix) + strlen((char*) name)] = '\'';
+	msg[strlen(msg_prefix) + strlen((char*) name) + 1] = 0;
 	vmerror_raise(NAME_ERROR, msg);
 }
 

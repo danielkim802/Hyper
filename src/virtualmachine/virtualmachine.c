@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "virtualmachine.h"
+#include "chunk.h"
 #include "opcode.h"
 #include "vmerror.h"
 
@@ -555,6 +556,8 @@ void vm_init(struct VM* vm, char* filename) {
 	vm->valueStack = valuestack_make();
 	vm->callStack = valuestack_make();
 	vm->envStack = envstack_make();
+	vm->gc = garbagecollector_make();
+	value_gc = vm->gc;
 
 	// setup dummy function in call stack for global environment
 	struct Value* dummy = value_make(FUN);
@@ -576,6 +579,8 @@ void vm_init(struct VM* vm, char* filename) {
 	vm->pc = 0;
 	vm->halt = 0;
 	vm->debug = 0;
+	vm->cleanPeriod = 20;
+	vm->lastCleaned = 0;
 
 	// setup jump table
 	// expressions
@@ -658,6 +663,10 @@ void vm_printCallStack(struct VM* vm) {
 	valuestack_print(vm->callStack);
 }
 
+void vm_printGarbage(struct VM* vm) {
+	garbagecollector_print(vm->gc);
+}
+
 void vm_disassemble(struct VM* vm) {
 	printf("[%llu bytes read]\n", vm->mainMemSize);
 	printf(" byte   line\n");
@@ -679,15 +688,24 @@ void vm_exec(struct VM* vm) {
 	if (vm->debug) {
 		printf("\n");
 		vm_printValueStack(vm);
-		// vm_printCallStack(vm);
-		// vm_printEnvStacks(vm);
+		vm_printCallStack(vm);
+		vm_printEnvStacks(vm);
+		vm_printGarbage(vm);
 		printf("\n");
 	}
 }
 
 void vm_run(struct VM* vm) {
-	while (!vm->halt)
+	while (!vm->halt) {
+		// execute command
 		vm_exec(vm);
+
+		// handle garbage
+		if (vm->lastCleaned++ == vm->cleanPeriod) {
+			vm->lastCleaned = 0;
+			garbagecollector_clean(vm->gc, vm);
+		}
+	}
 }
 
 int main(int argc, char* argv[]) {

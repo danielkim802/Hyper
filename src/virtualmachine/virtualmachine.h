@@ -2,20 +2,7 @@
 #define VIRTUALMACHINE_H
 
 #include <stdint.h>
-#include "chunk.h"
 #include "vmutils.h"
-
-struct VM {
-	uint8_t* mainMem;
-	uint64_t mainMemSize;
-	struct ValueStack* valueStack;
-	struct ValueStack* callStack;
-	struct EnvStack* envStack;
-	struct Chunk chunk;
-	uint64_t pc;
-	uint8_t halt;
-	uint8_t debug;
-};
 
 // sets up the virtual machine
 void vm_init(struct VM* vm, char* filename);
