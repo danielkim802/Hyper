@@ -67,9 +67,8 @@ void node_storeName(struct Node* node, uint8_t* name, uint64_t ptr) {
 }
 
 struct Value* node_loadName(struct Node* node, uint8_t* name, uint64_t ptr) {
-	if (name[ptr] == 0) {
+	if (name[ptr] == 0)
 		return node->value;
-	}
 
 	for (uint8_t i = 0; i < node->size; i ++)
 		if (node->children[i].c == name[ptr])

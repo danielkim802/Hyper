@@ -75,10 +75,7 @@ void value_print(struct Value* value) {
 		case ARR:
 			printf("[");
 			for (uint64_t i = 0; i < value->arrLen; i ++) {
-				if (value->arrValue[i]->type == ARR)
-					printf("array");
-				else
-					value_print(value->arrValue[i]);
+				value_print(value->arrValue[i]);
 				if (i != value->arrLen - 1)
 					printf(", ");
 			}
