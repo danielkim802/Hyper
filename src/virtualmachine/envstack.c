@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "envstack.h"
 #include "env.h"
 #include "vmerror.h"
@@ -10,12 +11,24 @@ void envstack_init(struct EnvStack* es) {
 	es->max = 1;
 }
 
-void envstack_peek(struct EnvStack* es, struct Env* env) {
-	if (es->size != 0)
-		*env = es->envs[es->size - 1];
+struct EnvStack* envstack_make() {
+	struct EnvStack* es = malloc(sizeof(struct EnvStack));
+	envstack_init(es);
+	return es;
 }
 
-void envstack_push(struct EnvStack* es, struct Env* env) {
+void envstack_free(struct EnvStack* es) {
+	for (uint64_t i = 0; i < es->size; i ++)
+		env_free(&es->envs[i]);
+	free(es->envs);
+	free(es);
+}
+
+struct Env* envstack_peek(struct EnvStack* es) {
+	return &es->envs[es->size - 1];
+}
+
+void envstack_push(struct EnvStack* es, uint64_t pos) {
 	if (es->size == es->max) {
 		struct Env* newenvs = malloc(sizeof(struct Env) * es->max * 2);
 		for (uint64_t i = 0; i < es->size; i ++)
@@ -25,25 +38,20 @@ void envstack_push(struct EnvStack* es, struct Env* env) {
 		es->max *= 2;
 	}
 
-	es->envs[es->size++] = *env;
+	env_init(&es->envs[es->size++], pos);
 }
 
-void envstack_pop(struct EnvStack* es, struct Env* env) {
-	*env = es->envs[--es->size];
+uint64_t envstack_pop(struct EnvStack* es) {
+	uint64_t pos = es->envs[es->size - 1].stackPos;
+	env_freeContent(&es->envs[--es->size]);
+	return pos;
 }
 
-void envstack_free(struct EnvStack* es) {
-	for (uint64_t i = 0; i < es->size; i ++)
-		env_free(&es->envs[i]);
-	free(es->envs);
-}
-
-void envstack_loadName(struct EnvStack* es, uint8_t* name, struct Value* value) {
-	for (int64_t i = es->size - 1; i >= 0; i --) {
-		value->valid = 1;
-		env_loadName(&es->envs[i], name, value);
-		if (value->valid)
-			return;
+struct Value* envstack_loadName(struct EnvStack* es, uint8_t* name) {
+	for (uint64_t i = 0; i < es->size; i ++) {
+		struct Value* value = env_loadName(&es->envs[es->size - i - 1], name);
+		if (value != NULL)
+			return value;
 	}
 
 	char* msg_prefix = "Undefined name '";
@@ -52,6 +60,7 @@ void envstack_loadName(struct EnvStack* es, uint8_t* name, struct Value* value) 
 	strcpy(&msg[strlen(msg_prefix)], (char*) name);
 	msg[strlen(msg_prefix) + strlen((char*) name)] = '\'';
 	vmerror_raise(NAME_ERROR, msg);
+	return NULL;
 }
 
 void envstack_storeName(struct EnvStack* es, uint8_t* name) {
@@ -60,9 +69,8 @@ void envstack_storeName(struct EnvStack* es, uint8_t* name) {
 
 void envstack_assignName(struct EnvStack* es, uint8_t* name, struct Value* value) {
 	for (int64_t i = es->size - 1; i >= 0; i --) {
-		value->valid = 1;
-		env_assignName(&es->envs[i], name, value);
-		if (value->valid)
+		struct Value* valueout = env_assignName(&es->envs[i], name, value);
+		if (valueout != NULL)
 			return;
 	}
 
@@ -74,5 +82,13 @@ void envstack_assignName(struct EnvStack* es, uint8_t* name, struct Value* value
 	vmerror_raise(NAME_ERROR, msg);
 }
 
-
+void envstack_print(struct EnvStack* es) {
+	printf("----envstack [%x]\n", (unsigned int) es);
+	for (uint64_t i = 0; i < es->size; i ++) {
+		printf("[%lli] ", i);
+		env_print(&es->envs[i]);
+		printf("\n");
+	}
+	printf("----envstack end\n");
+}
 

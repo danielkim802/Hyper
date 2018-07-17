@@ -176,7 +176,7 @@ void chunk_free(struct Chunk* chunk) {
 		case DIV: break;
 		case PLUS: break;
 		case MINUS: break;
-		case FUN_CALL: 
+		case FUN_CALL:
 			free(chunk->uintArgs);
 			break;
 		case GET_ATTR:
