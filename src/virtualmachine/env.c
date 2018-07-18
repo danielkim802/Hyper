@@ -97,6 +97,8 @@ struct Value* node_assignName(struct Node* node, uint8_t* name, uint64_t ptr, st
 void env_init(struct Env* env, uint64_t stackPos) {
 	env->head = node_make(0, NULL);
 	env->stackPos = stackPos;
+	env->inUse = malloc(sizeof(uint64_t));
+	*env->inUse = 0;
 }
 
 struct Env* env_make(uint64_t pos) {
@@ -105,13 +107,16 @@ struct Env* env_make(uint64_t pos) {
 	return env;
 }
 
-void env_free(struct Env* env) {
-	node_free(env->head);
-	free(env);
+void env_freeContent(struct Env* env) {
+	if (!*env->inUse) {
+		node_free(env->head);
+		free(env->inUse);
+	}
 }
 
-void env_freeContent(struct Env* env) {
-	node_free(env->head);
+void env_free(struct Env* env) {
+	env_freeContent(env);
+	free(env);
 }
 
 void env_storeName(struct Env* env, uint8_t* name) {

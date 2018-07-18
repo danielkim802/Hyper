@@ -23,6 +23,7 @@ struct Value {
 	uint64_t funArgc;
 	uint8_t** funArgs;
 	uint64_t funReturn;
+	uint64_t funClosures;
 	struct Env* structValue;
 	struct Value** arrValue;
 	uint64_t arrLen;
@@ -49,6 +50,7 @@ struct Node {
 struct Env {
 	struct Node* head;
 	uint64_t stackPos;
+	uint64_t* inUse;
 };
 
 // dynamic array
@@ -71,6 +73,7 @@ struct VM {
 	struct ValueStack* valueStack;
 	struct ValueStack* callStack;
 	struct EnvStack* envStack;
+	struct Env* globalEnv;
 	struct GarbageCollector* gc;
 	struct Chunk chunk;
 	uint64_t pc;

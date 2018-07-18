@@ -291,7 +291,6 @@ class Compiler(ASTTraverser):
 		self.write_cmd(JMP)
 		jmp_addr = self.save(parser.INT)
 		self.write_saved(addr, parser.INT, len(self.buffer))
-		self.write_cmd(PUSH_ENV)
 		self.visit(node.content)
 		self.write_saved(jmp_addr, parser.INT, len(self.buffer))
 
@@ -430,10 +429,8 @@ class Compiler(ASTTraverser):
 		self.write_cmd(HALT, node.token)
 
 	def visit_Program(self, node):
-		self.write_cmd(PUSH_ENV)
 		ptrs = self.declare_std()
 		self.visit(node.content)
-		self.write_cmd(POP_ENV)
 		self.visit(node.eof)
 		self.write_std(ptrs)
 

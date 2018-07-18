@@ -18,6 +18,9 @@ struct Env* envstack_peek(struct EnvStack* es);
 // push new env onto stack
 void envstack_push(struct EnvStack* es, uint64_t pos);
 
+// push existing env onto stack
+void envstack_pushEnv(struct EnvStack* es, struct Env* env);
+
 // pop from stack
 uint64_t envstack_pop(struct EnvStack* es);
 

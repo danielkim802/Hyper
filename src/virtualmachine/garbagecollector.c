@@ -113,11 +113,11 @@ void garbagecollector_freeValues(struct GarbageCollector* gc) {
 	}
 
 	// set new list of active values
-	free(gc->values);
+	free(gc->values);	
 	gc->values = temp->values;
 	gc->size = temp->size;
 	gc->max = temp->max;
-	free(temp);
+	free(temp);	
 }
 
 void garbagecollector_clean(struct GarbageCollector* gc, struct VM* vm) {

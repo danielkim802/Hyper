@@ -156,7 +156,7 @@ void exec_eq(struct VM* vm) {
 	else if (value1->type == FLOAT)
 		res->boolValue = value1->floatValue == value2->floatValue;
 	else if (value1->type == STRING)
-		res->boolValue = strcmp((char*) value1->stringValue, (char*) value2->stringValue);
+		res->boolValue = !strcmp((char*) value1->stringValue, (char*) value2->stringValue);
 	else if (value1->type == BOOL)
 		res->boolValue = !value1->boolValue == !value2->boolValue;
 	else if (value1->type == FUN)
@@ -313,17 +313,41 @@ void exec_fun_call(struct VM* vm) {
 	uint64_t returnAddr = vm->chunk.uintArgs[1];
 	struct Value* fun = valuestack_pop(vm->valueStack);
 
-	if (fun->type != FUN)
-		vmerror_raise(TYPE_ERROR, "Operand not callable");
-	if (fun->funArgc != 0 && argc > fun->funArgc)
-		vmerror_raise(TYPE_ERROR, "Too many arguments in function call");
-	if (fun->funArgc == 0 && argc > 1)
-		vmerror_raise(TYPE_ERROR, "Too many arguments in function call");
+	// free chunk
+	free(vm->chunk.uintArgs);
 
-	// push new environment to store arguments
+	// make a copy of the function (needed for recursive calls)
+	struct Value* funcopy = value_make(FUN);
+	funcopy->funValue = fun->funValue;
+	funcopy->funArgc = fun->funArgc;
+	funcopy->funArgs = malloc(sizeof(uint8_t*) * fun->funArgc);
+	for (uint64_t i = 0; i < fun->funArgc; i ++) {
+		uint64_t len = strlen((char*) fun->funArgs[i]);
+		funcopy->funArgs[i] = malloc(sizeof(uint8_t) * (len + 1));
+		strcpy((char*) funcopy->funArgs[i], (char*) fun->funArgs[i]);
+		funcopy->funArgs[i][len] = 0;
+	}
+	funcopy->funClosures = fun->funClosures;
+	funcopy->funEnvStack = envstack_make();
+
+	// copy environment stack
+	envstack_pushEnv(funcopy->funEnvStack, vm->globalEnv);
+	for (uint64_t i = 1; i < fun->funEnvStack->size; i ++) {
+		envstack_pushEnv(funcopy->funEnvStack, &fun->funEnvStack->envs[i]);
+		*envstack_peek(funcopy->funEnvStack)->inUse += 1;
+	}
+	fun = funcopy;
+
+	// check function argument count
+	if (fun->funArgc == 0 && argc != 1)
+		vmerror_raise(TYPE_ERROR, "Too many arguments to function call");
+	else if (fun->funArgc != 0 && argc > fun->funArgc)
+		vmerror_raise(TYPE_ERROR, "Too many arguments to function call");
+
+	// push argument/function environment
 	envstack_push(fun->funEnvStack, vm->valueStack->size);
 
-	// add argument names and values one by one
+	// assign argument names and values one by one
 	if (fun->funArgc == 0) {
 		struct Value* nullVal = valuestack_pop(vm->valueStack);
 
@@ -335,6 +359,22 @@ void exec_fun_call(struct VM* vm) {
 			envstack_storeName(fun->funEnvStack, fun->funArgs[i]);
 			envstack_assignName(fun->funEnvStack, fun->funArgs[i], arg);
 		}
+	}
+
+	// make closure if not enough arguments
+	if (argc < fun->funArgc) {
+		fun->funClosures += 1;
+		*envstack_peek(fun->funEnvStack)->inUse += 1;
+		uint8_t** newFunArgs = malloc(sizeof(uint8_t*) * (fun->funArgc - argc));
+		for (uint64_t i = argc; i < fun->funArgc; i ++)
+			newFunArgs[i - argc] = fun->funArgs[i];
+		for (uint64_t i = 0; i < argc; i ++)
+			free(fun->funArgs[i]);
+		free(fun->funArgs);
+		fun->funArgs = newFunArgs;
+		fun->funArgc -= argc;
+		valuestack_push(vm->valueStack, fun);
+		return;
 	}
 
 	// push to call stack and assign return address
@@ -391,6 +431,7 @@ void exec_load_float(struct VM* vm) {
 void exec_load_name(struct VM* vm) {
 	struct Value* value = envstack_loadName(vm->envStack, vm->chunk.stringArg);
 	valuestack_push(vm->valueStack, value);
+	free(vm->chunk.stringArg);
 }
 
 void exec_load_bool(struct VM* vm) {
@@ -412,11 +453,24 @@ void exec_load_string(struct VM* vm) {
 }
 
 void exec_make_fun(struct VM* vm) {
+	// setup function
 	struct Value* value = value_make(FUN);
 	value->funValue = vm->chunk.uintArgs[0];
 	value->funArgc = vm->chunk.uintArgs[1];
 	value->funArgs = vm->chunk.stringArgs;
 	value->funEnvStack = envstack_make();
+
+	// push global environment
+	envstack_pushEnv(value->funEnvStack, vm->globalEnv);
+
+	// push surrounding environment (for closure)
+	if (envstack_peek(vm->envStack)->head != vm->globalEnv->head) {
+		*envstack_peek(vm->envStack)->inUse += 1;
+		envstack_pushEnv(value->funEnvStack, envstack_peek(vm->envStack));
+	}
+
+	value->funClosures = value->funEnvStack->size;
+
 	free(vm->chunk.uintArgs);
 	valuestack_push(vm->valueStack, value);
 }
@@ -453,6 +507,7 @@ void exec_pop_env(struct VM* vm) {
 void exec_assign_name(struct VM* vm) {
 	struct Value* value = valuestack_pop(vm->valueStack);
 	envstack_assignName(vm->envStack, vm->chunk.stringArg, value);
+	free(vm->chunk.stringArg);
 }
 
 void exec_store_arr(struct VM* vm) {
@@ -476,22 +531,20 @@ void exec_store_attr(struct VM* vm) {
 
 void exec_store_name(struct VM* vm) {
 	envstack_storeName(vm->envStack, vm->chunk.stringArg);
+	free(vm->chunk.stringArg);
 }
 
 void exec_return(struct VM* vm) {
 	// pop function off call stack
 	struct Value* returnFromFun = valuestack_pop(vm->callStack);
 
-	// get return value from value stack and pop all function call environments
+	// get return value from value stack and pop function call environments
 	struct Value* returnVal = valuestack_pop(vm->valueStack);
-	while (vm->envStack->size > 1) {
+	while (vm->envStack->size > returnFromFun->funClosures) {
 		uint64_t pos = envstack_pop(vm->envStack);
 		while (vm->valueStack->size > pos)
 			valuestack_pop(vm->valueStack);
 	}
-
-	// pop environment holding arguments
-	envstack_pop(vm->envStack);
 
 	// push return value to stack
 	valuestack_push(vm->valueStack, returnVal);
@@ -556,6 +609,10 @@ void vm_init(struct VM* vm, char* filename) {
 	vm->valueStack = valuestack_make();
 	vm->callStack = valuestack_make();
 	vm->envStack = envstack_make();
+	envstack_push(vm->envStack, 0);
+	vm->globalEnv = malloc(sizeof(struct Env));
+	*vm->globalEnv = *envstack_peek(vm->envStack);
+	*vm->globalEnv->inUse = 1;
 	vm->gc = garbagecollector_make();
 	value_gc = vm->gc;
 
@@ -579,7 +636,7 @@ void vm_init(struct VM* vm, char* filename) {
 	vm->pc = 0;
 	vm->halt = 0;
 	vm->debug = 0;
-	vm->cleanPeriod = 20;
+	vm->cleanPeriod = 10;
 	vm->lastCleaned = 0;
 
 	// setup jump table
@@ -641,7 +698,8 @@ void vm_init(struct VM* vm, char* filename) {
 
 void vm_free(struct VM* vm) {
 	free(vm->mainMem);
-	valuestack_free(vm->valueStack);
+	free(vm->globalEnv);
+	valuestack_free(vm->valueStack);	
 	valuestack_free(vm->callStack);
 	envstack_free(vm->envStack);
 }
@@ -687,9 +745,9 @@ void vm_exec(struct VM* vm) {
 	(*exec_func[vm->chunk.opcode])(vm);
 	if (vm->debug) {
 		printf("\n");
-		vm_printValueStack(vm);
-		vm_printCallStack(vm);
-		vm_printEnvStacks(vm);
+		// vm_printValueStack(vm);
+		// vm_printCallStack(vm);
+		// vm_printEnvStacks(vm);
 		vm_printGarbage(vm);
 		printf("\n");
 	}

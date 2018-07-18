@@ -19,7 +19,7 @@ struct EnvStack* envstack_make() {
 
 void envstack_free(struct EnvStack* es) {
 	for (uint64_t i = 0; i < es->size; i ++)
-		env_free(&es->envs[i]);
+		env_freeContent(&es->envs[i]);
 	free(es->envs);
 	free(es);
 }
@@ -37,8 +37,20 @@ void envstack_push(struct EnvStack* es, uint64_t pos) {
 		es->envs = newenvs;
 		es->max *= 2;
 	}
-
 	env_init(&es->envs[es->size++], pos);
+}
+
+void envstack_pushEnv(struct EnvStack* es, struct Env* env) {
+	if (es->size == es->max) {
+		struct Env* newenvs = malloc(sizeof(struct Env) * es->max * 2);
+		for (uint64_t i = 0; i < es->size; i ++)
+			newenvs[i] = es->envs[i];
+		free(es->envs);
+		es->envs = newenvs;
+		es->max *= 2;
+	}
+
+	es->envs[es->size++] = *env;
 }
 
 uint64_t envstack_pop(struct EnvStack* es) {
