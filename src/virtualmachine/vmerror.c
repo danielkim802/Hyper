@@ -16,6 +16,9 @@ void vmerror_raise(enum VMError err, char* msg) {
 		case INDEX_ERROR:
 			printf("[IndexError]");
 			break;
+		case RUNTIME_ERROR:
+			printf("[RuntimeError]");
+			break;
 		default:
 			break;
 	}

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "virtualmachine.h"
+#include "vmconfig.h"
 #include "chunk.h"
 #include "opcode.h"
 #include "vmerror.h"
@@ -684,9 +685,14 @@ void vm_init(struct VM* vm, char* filename) {
 	// set flags and other parameters
 	vm->pc = 0;
 	vm->halt = 0;
-	vm->debug = 0;
-	vm->cleanPeriod = 1;
 	vm->lastCleaned = 0;
+	vm->debug = VM_DEBUG;
+	vm->debugValueStack = VM_DEBUGVALUESTACK;
+	vm->debugCallStack = VM_DEBUGCALLSTACK;
+	vm->debugEnvStacks = VM_DEBUGENVSTACKS;
+	vm->debugGarbage = VM_DEBUGGARBAGE;
+	vm->cleanPeriod = VM_CLEANPERIOD;
+	vm->maxCallStack = VM_MAXCALLSTACK;
 
 	// setup jump table
 	exec_func[AND]         = exec_and;
@@ -734,11 +740,9 @@ void vm_init(struct VM* vm, char* filename) {
 	vmerror_vm = vm;
 }
 
-struct VM* vm_make(char* filename, uint64_t cp, uint8_t debug) {
+struct VM* vm_make(char* filename) {
 	struct VM* vm = malloc(sizeof(struct VM));
 	vm_init(vm, filename);
-	vm->cleanPeriod = cp;
-	vm->debug = debug;
 	return vm;
 }
 
@@ -786,24 +790,32 @@ void vm_disassemble(struct VM* vm) {
 void vm_exec(struct VM* vm) {
 	if (vm->debug)
 		printf("[%5llu] ", vm->pc);
+
 	vm->pc += chunk_get(&vm->chunk, &vm->mainMem[vm->pc]);
+	
 	if (vm->debug)
 		chunk_print(&vm->chunk);
+	
 	(*exec_func[vm->chunk.opcode])(vm);
-	if (vm->debug) {
-		printf("\n");
+	
+	if (vm->debugValueStack)
 		vm_printValueStack(vm);
-		// vm_printCallStack(vm);
-		// vm_printEnvStacks(vm);
-		// vm_printGarbage(vm);
-		printf("\n");
-	}
+	if (vm->debugCallStack)
+		vm_printCallStack(vm);
+	if (vm->debugEnvStacks)
+		vm_printEnvStacks(vm);
+	if (vm->debugGarbage)
+		vm_printGarbage(vm);
 }
 
 void vm_run(struct VM* vm) {
 	while (!vm->halt) {
 		// execute command
 		vm_exec(vm);
+
+		// check for max call stack
+		if (vm->callStack->size > vm->maxCallStack)
+			vmerror_raise(RUNTIME_ERROR, "Exceeded maximum recursion depth");
 
 		// handle garbage
 		if (vm->lastCleaned++ == vm->cleanPeriod) {

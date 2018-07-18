@@ -93,10 +93,7 @@ void mark_valueStack(struct ValueStack* vs) {
 }
 
 void garbagecollector_markValues(struct VM* vm) {
-	// mark value stack
 	mark_valueStack(vm->valueStack);
-
-	// mark call stack
 	mark_valueStack(vm->callStack);
 }
 

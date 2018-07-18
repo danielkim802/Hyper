@@ -85,12 +85,12 @@ ADD                                                                 opcode[ 0x09
 	POP --> a
 	a + b --> PUSH
 
-	type a = INT | FLOAT | STRING
-	type b = INT | FLOAT | STRING
+	type a = INT | FLOAT | STRING | ARR
+	type b = INT | FLOAT | STRING | ARR
 
 	*note: works as string concatenation if both are of type
-	STRING, otherwise if one or more is FLOAT, result will be FLOAT.
-	If both are INT, result will be INT.
+	STRING, and likewise for ARR. Otherwise if one or more is FLOAT, result 
+	will be FLOAT. If both are INT, result will be INT.
 ──────────────────────────────────────────────────────────────────────────────────
 SUB                                                                 opcode[ 0x0A ]
 	POP --> b
