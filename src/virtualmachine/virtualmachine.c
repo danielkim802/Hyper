@@ -633,14 +633,15 @@ void vm_init(struct VM* vm, char* filename) {
 	for (uint64_t i = 0; i < filesize; i ++)
 		vm->mainMem[i] = fgetc(f);
 	fclose(f);
+
+	// set flags and other parameters
 	vm->pc = 0;
 	vm->halt = 0;
 	vm->debug = 0;
-	vm->cleanPeriod = 10;
+	vm->cleanPeriod = 1;
 	vm->lastCleaned = 0;
 
 	// setup jump table
-	// expressions
 	exec_func[AND]         = exec_and;
 	exec_func[OR]          = exec_or;
 	exec_func[NOT]         = exec_not;
@@ -659,8 +660,6 @@ void vm_init(struct VM* vm, char* filename) {
 	exec_func[FUN_CALL]    = exec_fun_call;
 	exec_func[GET_ATTR]    = exec_get_attr;
 	exec_func[ARR_IDX]     = exec_arr_idx;
-
-	// literals
 	exec_func[LOAD_INT]    = exec_load_int;
 	exec_func[LOAD_FLOAT]  = exec_load_float;
 	exec_func[LOAD_NAME]   = exec_load_name;
@@ -670,30 +669,30 @@ void vm_init(struct VM* vm, char* filename) {
 	exec_func[MAKE_FUN]    = exec_make_fun;
 	exec_func[MAKE_STRUCT] = exec_make_struct;
 	exec_func[MAKE_ARR]    = exec_make_arr;
-
-	// vm functions
 	exec_func[PUSH_ENV]    = exec_push_env;
 	exec_func[POP_ENV]     = exec_pop_env;
-
-	// statements
 	exec_func[ASSIGN_NAME] = exec_assign_name;
 	exec_func[STORE_ARR]   = exec_store_arr;
 	exec_func[STORE_ATTR]  = exec_store_attr;
 	exec_func[STORE_NAME]  = exec_store_name;
 	exec_func[RETURN]      = exec_return;
 	exec_func[PRINT]       = exec_print;
-
-	// control
 	exec_func[BTRUE]       = exec_btrue;
 	exec_func[BFALSE]      = exec_bfalse;
 	exec_func[JMP]         = exec_jmp;
 	exec_func[HALT]        = exec_halt;
-
-	// library functions
 	exec_func[LEN_ARR]     = exec_len_arr;
 
 	// setup error
 	vmerror_vm = vm;
+}
+
+struct VM* vm_make(char* filename, uint64_t cp, uint8_t debug) {
+	struct VM* vm = malloc(sizeof(struct VM));
+	vm_init(vm, filename);
+	vm->cleanPeriod = cp;
+	vm->debug = debug;
+	return vm;
 }
 
 void vm_free(struct VM* vm) {
@@ -702,6 +701,7 @@ void vm_free(struct VM* vm) {
 	valuestack_free(vm->valueStack);	
 	valuestack_free(vm->callStack);
 	envstack_free(vm->envStack);
+	free(vm);
 }
 
 void vm_printValueStack(struct VM* vm) {
@@ -745,10 +745,10 @@ void vm_exec(struct VM* vm) {
 	(*exec_func[vm->chunk.opcode])(vm);
 	if (vm->debug) {
 		printf("\n");
-		// vm_printValueStack(vm);
+		vm_printValueStack(vm);
 		// vm_printCallStack(vm);
 		// vm_printEnvStacks(vm);
-		vm_printGarbage(vm);
+		// vm_printGarbage(vm);
 		printf("\n");
 	}
 }
@@ -767,10 +767,8 @@ void vm_run(struct VM* vm) {
 }
 
 int main(int argc, char* argv[]) {
-	struct VM vm;
-	vm_init(&vm,  "../../data/test.hypc");
-	vm.debug = 0;
-	vm_run(&vm);
-	vm_free(&vm);
+	struct VM* vm = vm_make("../../data/test.hypc", 50, 0);
+	vm_run(vm);
+	vm_free(vm);
 	return 0;
 }

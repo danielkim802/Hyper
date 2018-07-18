@@ -7,6 +7,10 @@
 // sets up the virtual machine
 void vm_init(struct VM* vm, char* filename);
 
+// creates a virtual machine; collects garbage every 
+// 'cleanPeriod' cycles
+struct VM* vm_make(char* filename, uint64_t cp, uint8_t debug);
+
 // disassembles and prints bytecode
 void vm_disassemble(struct VM* vm);
 
