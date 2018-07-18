@@ -313,6 +313,9 @@ void exec_fun_call(struct VM* vm) {
 	uint64_t returnAddr = vm->chunk.uintArgs[1];
 	struct Value* fun = valuestack_pop(vm->valueStack);
 
+	if (fun->type != FUN)
+		vmerror_raise(TYPE_ERROR, "Operand not callable");
+
 	// free chunk
 	free(vm->chunk.uintArgs);
 
@@ -387,7 +390,36 @@ void exec_fun_call(struct VM* vm) {
 }
 
 void exec_get_attr(struct VM* vm) {
+	// pop struct value from stack
+	struct Value* value = valuestack_pop(vm->valueStack);
+	uint8_t* attr = vm->chunk.stringArg;
 
+	// type check
+	if (value->type != STRUCT)
+		vmerror_raise(TYPE_ERROR, "Operand has no attributes");
+
+	value = env_loadName(value->structValue, attr);
+
+	if (value == NULL) {
+		char* msg_prefix = "Struct has no attribute '";
+		char* msg_name = (char*) attr;
+		char* msg_postfix = "'";
+		int mp = strlen((char*) msg_prefix);
+		int mn = strlen((char*) attr);
+		int mpf = strlen((char*) msg_postfix);
+		char* msg = malloc(sizeof(char) * (mp + mn + mpf + 1));
+		strcpy(&msg[0], msg_prefix);
+		strcpy(&msg[mp], msg_name);
+		strcpy(&msg[mp + mn], msg_postfix);
+		msg[mp + mn + mpf] = 0;
+		vmerror_raise(TYPE_ERROR, msg);
+	}
+
+	// push to value stack
+	valuestack_push(vm->valueStack, value);
+
+	// free chunk
+	free(vm->chunk.stringArg);
 }
 
 void exec_arr_idx(struct VM* vm) {
@@ -476,7 +508,14 @@ void exec_make_fun(struct VM* vm) {
 }
 
 void exec_make_struct(struct VM* vm) {
-
+	struct Value* value = value_make(STRUCT);
+	value->structValue = malloc(sizeof(struct Env));
+	*value->structValue = *envstack_peek(vm->envStack);
+	*value->structValue->inUse += 1;
+	uint64_t pos = envstack_pop(vm->envStack);
+	while (vm->valueStack->size > pos)
+		valuestack_pop(vm->valueStack);
+	valuestack_push(vm->valueStack, value);
 }
 
 void exec_make_arr(struct VM* vm) {
@@ -526,7 +565,15 @@ void exec_store_arr(struct VM* vm) {
 }
 
 void exec_store_attr(struct VM* vm) {
+	struct Value* svalue = valuestack_pop(vm->valueStack);
+	struct Value* avalue = valuestack_pop(vm->valueStack);
 
+	if (svalue->type != STRUCT)
+		vmerror_raise(TYPE_ERROR, "Operand has no attributes");
+
+	uint8_t* attr = vm->chunk.stringArg;
+	env_assignName(svalue->structValue, attr, avalue);
+	free(vm->chunk.stringArg);
 }
 
 void exec_store_name(struct VM* vm) {
@@ -764,11 +811,4 @@ void vm_run(struct VM* vm) {
 			garbagecollector_clean(vm->gc, vm);
 		}
 	}
-}
-
-int main(int argc, char* argv[]) {
-	struct VM* vm = vm_make("../../data/test.hypc", 50, 0);
-	vm_run(vm);
-	vm_free(vm);
-	return 0;
 }

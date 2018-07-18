@@ -280,7 +280,6 @@ class Compiler(ASTTraverser):
 		self.write_cmd(PUSH_ENV)
 		self.visit(node.content)
 		self.write_cmd(MAKE_STRUCT, node.token)
-		self.write_cmd(POP_ENV)
 
 	def visit_FunDef(self, node):
 		self.write_cmd(MAKE_FUN, node.token)

@@ -23,7 +23,8 @@ void env_storeName(struct Env* env, uint8_t* name);
 // was not assigned.
 struct Value* env_assignName(struct Env* env, uint8_t* name, struct Value* value);
 
-// loads value of a name 
+// loads value of a name; returns NULL if no value associated with
+// the name.
 struct Value* env_loadName(struct Env* env, uint8_t* name);
 
 // prints first character in prefix tree 
