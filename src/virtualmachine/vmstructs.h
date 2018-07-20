@@ -23,7 +23,7 @@ struct Value {
 	uint64_t funArgc;
 	uint8_t** funArgs;
 	uint64_t funReturn;
-	uint64_t funClosures;
+	struct ValueStack* funClosureStack;
 	struct Env* structValue;
 	struct Value** arrValue;
 	uint64_t arrLen;

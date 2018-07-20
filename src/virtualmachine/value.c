@@ -15,8 +15,7 @@ struct Value* value_make(enum Type type) {
 void value_free(struct Value* value) {
 	switch (value->type) {
 		case FUN:
-			for (uint64_t i = 1; i < value->funEnvStack->size; i ++)
-				*value->funEnvStack->envs[i].inUse -= 1;
+			*value->funEnvStack->envs[1].inUse -= 1;
 			envstack_free(value->funEnvStack);
 			for (uint64_t i = 0; i < value->funArgc; i ++)
 				free(value->funArgs[i]);

@@ -331,54 +331,50 @@ void exec_fun_call(struct VM* vm) {
 		strcpy((char*) funcopy->funArgs[i], (char*) fun->funArgs[i]);
 		funcopy->funArgs[i][len] = 0;
 	}
-	funcopy->funClosures = fun->funClosures;
+	funcopy->funClosureStack = valuestack_make();
+	for (uint64_t i = 0; i < fun->funClosureStack->size; i ++)
+		valuestack_push(funcopy->funClosureStack, fun->funClosureStack->values[i]);
 	funcopy->funEnvStack = envstack_make();
-
-	// copy environment stack
 	envstack_pushEnv(funcopy->funEnvStack, vm->globalEnv);
-	for (uint64_t i = 1; i < fun->funEnvStack->size; i ++) {
-		envstack_pushEnv(funcopy->funEnvStack, &fun->funEnvStack->envs[i]);
-		*envstack_peek(funcopy->funEnvStack)->inUse += 1;
-	}
+	envstack_pushEnv(funcopy->funEnvStack, &fun->funEnvStack->envs[1]);
 	fun = funcopy;
 
 	// check function argument count
-	if (fun->funArgc == 0 && argc != 1)
+	uint64_t funArgc = fun->funArgc - fun->funClosureStack->size;
+	if (funArgc == 0 && argc > 1)
 		vmerror_raise(TYPE_ERROR, "Too many arguments to function call");
-	else if (fun->funArgc != 0 && argc > fun->funArgc)
+	else if (funArgc != 0 && argc > funArgc)
 		vmerror_raise(TYPE_ERROR, "Too many arguments to function call");
 
 	// push argument/function environment
 	envstack_push(fun->funEnvStack, vm->valueStack->size);
 
-	// assign argument names and values one by one
-	if (fun->funArgc == 0) {
+	// assign closure arguments
+	for (uint64_t i = 0; i < fun->funClosureStack->size; i ++) {
+		envstack_storeName(fun->funEnvStack, fun->funArgs[i]);
+		envstack_assignName(fun->funEnvStack, fun->funArgs[i], fun->funClosureStack->values[i]);
+	}
+
+	// make closure if not enough arguments
+	if (argc < funArgc) {
+		valuestack_push(vm->valueStack, fun);
+		return;
+	}
+
+	// assign rest of arguments
+	if (funArgc == 0) {
 		struct Value* nullVal = valuestack_pop(vm->valueStack);
 
 		if (nullVal->type != NIL)
 			vmerror_raise(TYPE_ERROR, "Function with no arguments must be called with 'null'");
 	} else {
-		for (uint64_t i = 0; i < argc; i ++) {
+		uint64_t start = fun->funClosureStack->size;
+		for (uint64_t i = start; i < start + argc; i ++) {
 			struct Value* arg = valuestack_pop(vm->valueStack);
+			valuestack_push(fun->funClosureStack, arg);
 			envstack_storeName(fun->funEnvStack, fun->funArgs[i]);
 			envstack_assignName(fun->funEnvStack, fun->funArgs[i], arg);
 		}
-	}
-
-	// make closure if not enough arguments
-	if (argc < fun->funArgc) {
-		fun->funClosures += 1;
-		*envstack_peek(fun->funEnvStack)->inUse += 1;
-		uint8_t** newFunArgs = malloc(sizeof(uint8_t*) * (fun->funArgc - argc));
-		for (uint64_t i = argc; i < fun->funArgc; i ++)
-			newFunArgs[i - argc] = fun->funArgs[i];
-		for (uint64_t i = 0; i < argc; i ++)
-			free(fun->funArgs[i]);
-		free(fun->funArgs);
-		fun->funArgs = newFunArgs;
-		fun->funArgc -= argc;
-		valuestack_push(vm->valueStack, fun);
-		return;
 	}
 
 	// push to call stack and assign return address
@@ -492,18 +488,19 @@ void exec_make_fun(struct VM* vm) {
 	value->funArgc = vm->chunk.uintArgs[1];
 	value->funArgs = vm->chunk.stringArgs;
 	value->funEnvStack = envstack_make();
+	value->funClosureStack = valuestack_make();
 
 	// push global environment
 	envstack_pushEnv(value->funEnvStack, vm->globalEnv);
 
 	// push surrounding environment (for closure)
-	if (envstack_peek(vm->envStack)->head != vm->globalEnv->head) {
-		*envstack_peek(vm->envStack)->inUse += 1;
+	if (envstack_peek(vm->envStack)->head != vm->globalEnv->head)
 		envstack_pushEnv(value->funEnvStack, envstack_peek(vm->envStack));
-	}
+	else
+		envstack_push(value->funEnvStack, vm->valueStack->size);
+	*envstack_peek(value->funEnvStack)->inUse += 1;
 
-	value->funClosures = value->funEnvStack->size;
-
+	// free chunk and push to value stack
 	free(vm->chunk.uintArgs);
 	valuestack_push(vm->valueStack, value);
 }
@@ -588,7 +585,7 @@ void exec_return(struct VM* vm) {
 
 	// get return value from value stack and pop function call environments
 	struct Value* returnVal = valuestack_pop(vm->valueStack);
-	while (vm->envStack->size > returnFromFun->funClosures) {
+	while (vm->envStack->size > 2) {
 		uint64_t pos = envstack_pop(vm->envStack);
 		while (vm->valueStack->size > pos)
 			valuestack_pop(vm->valueStack);
