@@ -246,6 +246,14 @@ class Compiler(ASTTraverser):
 		if node.op.type == parser.OR:
 			self.write_cmd(OR, node.token)
 
+	def visit_Pipe(self, node):
+		self.visit(node.left)
+		self.visit(node.right)
+
+		self.write_cmd(FUN_CALL, node.token)
+		self.write_value(parser.INT, 1)
+		self.write_value(parser.INT, len(self.buffer) + 8)
+
 	def visit_BoolUnaryOp(self, node):
 		self.visit(node.right)
 

@@ -87,7 +87,3 @@ var program = '
 brainfuck.load_program program
 brainfuck.run null
 print brainfuck.data
-
-var println = fun s {
-	print s
-}

@@ -43,6 +43,7 @@ DASSIGN  = 'DASSIGN'
 COMMA    = 'COMMA'
 DOT      = 'DOT'
 VAR      = 'VAR'
+PIPE     = 'PIPE'
 
 # control, keywords
 IF       = 'IF'
@@ -222,6 +223,9 @@ class Lexer(object):
 		if self.char == '.':
 			self.get()
 			return Token(DOT, '.', self.line)
+		if self.char == '\\':
+			self.get()
+			return Token(PIPE, '\\', self.line)
 		if self.is_space(self.char):
 			return self.get_space()
 		if self.is_newline(self.char):
@@ -319,6 +323,12 @@ class AST_BoolBinOp(AST):
 
 class AST_BoolUnaryOp(AST):
 	def __init__(self, op, right):
+		self.op = self.token = op
+		self.right = right
+
+class AST_Pipe(AST):
+	def __init__(self, left, op, right):
+		self.left = left
 		self.op = self.token = op
 		self.right = right
 
@@ -714,9 +724,18 @@ class Parser(object):
 			res.right = self.bool_term()
 		return res
 
-	# expr : bool_expr
+	# pipe_expr : bool_expr (PIPE bool_expr)*
+	def pipe_expr(self):
+		res = self.bool_expr()
+		while self.token.type == PIPE:
+			res = AST_Pipe(res, self.token, None)
+			self.eat(PIPE)
+			res.right = self.bool_expr()
+		return res
+
+	# expr : pipe_expr
 	def expr(self):
-		return self.bool_expr()
+		return self.pipe_expr()
 
 	# assign_stmt : attr_ref (ASSIGN | AASSIGN | SASSIGN | MASSIGN | DASSIGN) expr
 	def assign_stmt(self):
