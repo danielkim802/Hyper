@@ -1,0 +1,26 @@
+print 'incrementer with map'
+var map = fun f arr {
+	var res = []
+	for i to len arr {res += [f arr[i]]}
+	return res
+}
+var incr = fun a {return a + 1}
+var incrementer = map incr
+print [1, 2, 3, 4] \ incrementer \ incrementer
+print
+
+print 'closures with incomplete arguments'
+var add = fun a b {return a + b}
+var add10 = add 10
+var add20 = add 20
+var add30 = fun a {return a \ add10 \ add20}
+print add10
+print 1 \ add10 \ add20
+print 5 \ add30
+print
+
+print 'closure with function application'
+var apply = fun f x {return f x}
+print apply fun a {return a + 1}
+print apply fun a {return a + 1} 10
+print
