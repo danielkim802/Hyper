@@ -87,3 +87,17 @@ var program = '
 brainfuck.load_program program
 brainfuck.run null
 print brainfuck.data
+
+var funa = fun a b {
+	if b {
+		a = 10
+	}
+
+	print a
+}
+
+var fun1 = funa 20
+var fun2 = funa 30
+
+fun1 true
+fun1 false
