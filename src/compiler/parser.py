@@ -36,6 +36,10 @@ RBRACE   = 'RBRACE'
 LBRACKET = 'LBRACKET'
 RBRACKET = 'RBRACKET'
 ASSIGN   = 'ASSIGN'
+AASSIGN  = 'AASSIGN'
+SASSIGN  = 'SASSIGN'
+MASSIGN  = 'MASSIGN'
+DASSIGN  = 'DASSIGN'
 COMMA    = 'COMMA'
 DOT      = 'DOT'
 VAR      = 'VAR'
@@ -56,23 +60,23 @@ RETURN   = 'RETURN'
 PRINT    = 'PRINT'
 
 keywords = {
-	"if"    : IF,
-	"elif"  : ELIF,
-	"else"  : ELSE,
-	"for"   : FOR,
-	"to"    : TO,
-	"while" : WHILE,
-	"fun"   : FUNDEF,
-	"struct": STRUCTDEF,
-	"true"  : BOOL,
-	"false" : BOOL,
-	"not"   : NOT,
-	"and"   : AND,
-	"or"    : OR,
-	"return": RETURN,
-	"print" : PRINT,
-	"null"  : NULL,
-	"var"   : VAR
+	"if"      : IF,
+	"elif"    : ELIF,
+	"else"    : ELSE,
+	"for"     : FOR,
+	"to"      : TO,
+	"while"   : WHILE,
+	"fun"     : FUNDEF,
+	"struct"  : STRUCTDEF,
+	"true"    : BOOL,
+	"false"   : BOOL,
+	"not"     : NOT,
+	"and"     : AND,
+	"or"      : OR,
+	"return"  : RETURN,
+	"print"   : PRINT,
+	"null"    : NULL,
+	"var"     : VAR
 }
 
 class Token(object):
@@ -225,9 +229,16 @@ class Lexer(object):
 		if self.char == '=' and self.peek() != '=':
 			self.get()
 			return Token(ASSIGN, '=', self.line)
-		if self.char in {'<', '>', '!', '='}:
+		if self.char in ['<', '>', '!', '=']:
 			return self.get_compop()
-		if self.char in {'+', '-', '*', '/'}:
+		if self.char in ['+', '-', '*', '/']:
+			if self.peek() == '=':
+				return {
+					'+=' : Token(AASSIGN, '+=', self.line),
+					'-=' : Token(SASSIGN, '-=', self.line),
+					'*=' : Token(MASSIGN, '*=', self.line),
+					'/=' : Token(DASSIGN, '/=', self.line)
+				}[self.get() + self.get()]
 			return self.get_binop()
 		if self.char == '(':
 			self.get()
@@ -707,19 +718,33 @@ class Parser(object):
 	def expr(self):
 		return self.bool_expr()
 
-	# assign_stmt : attr_ref ASSIGN expr
+	# assign_stmt : attr_ref (ASSIGN | AASSIGN | SASSIGN | MASSIGN | DASSIGN) expr
 	def assign_stmt(self):
 		expr = self.expr()
 
-		if self.token.type != ASSIGN:
+		if self.token.type not in [ASSIGN, AASSIGN, SASSIGN, MASSIGN, DASSIGN]:
 			return expr
 
-		token = self.token
-		self.eat(ASSIGN)
-		right = self.expr()
-
 		if type(expr) not in [AST_Name, AST_ArrayIndex, AST_AttrRef]:
-			self.error(token, "Invalid assignment target")
+			self.error(self.token, "Invalid assignment target")
+
+		token = self.token
+		right = None
+		if self.token.type == ASSIGN:
+			self.eat(ASSIGN)
+			right = self.expr()
+		if self.token.type == AASSIGN:
+			self.eat(AASSIGN)
+			right = AST_BinOp(expr, Token(ADD, token.value, token.line), self.expr())
+		if self.token.type == SASSIGN:
+			self.eat(SASSIGN)
+			right = AST_BinOp(expr, Token(SUB, token.value, token.line), self.expr())
+		if self.token.type == MASSIGN:
+			self.eat(MASSIGN)
+			right = AST_BinOp(expr, Token(MUL, token.value, token.line), self.expr())
+		if self.token.type == DASSIGN:
+			self.eat(DASSIGN)
+			right = AST_BinOp(expr, Token(DIV, token.value, token.line), self.expr())
 
 		return AST_Assign(expr, token, right)
 

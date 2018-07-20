@@ -32,7 +32,7 @@ bool_expr : bool_term (OR bool_term)*
 
 expr : bool_expr
 
-assign_stmt : attr_ref ASSIGN expr
+assign_stmt : attr_ref (ASSIGN | AASSIGN | SASSIGN | MASSIGN | DASSIGN) expr
 
 declaration_stmt : VAR SPACE variable [ASSIGN expr]
 
