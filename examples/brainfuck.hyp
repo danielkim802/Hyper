@@ -68,8 +68,8 @@ var brainfuck = struct {
 
 	var load_program = fun p { program = p }
 
-	var run = fun { 
-		while pc < len program { 
+	var run = fun {
+		while pc < len program {
 			exec null
 			pc += 1
 		}
@@ -82,7 +82,6 @@ var program = '
 	>++
 	<-
 ]] >.
-<<<<<<<<<
 '
 brainfuck.load_program program
 brainfuck.run null

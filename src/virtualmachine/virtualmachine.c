@@ -337,6 +337,7 @@ void exec_fun_call(struct VM* vm) {
 	funcopy->funEnvStack = envstack_make();
 	envstack_pushEnv(funcopy->funEnvStack, vm->globalEnv);
 	envstack_pushEnv(funcopy->funEnvStack, &fun->funEnvStack->envs[1]);
+	*envstack_peek(funcopy->funEnvStack)->inUse += 1;
 	fun = funcopy;
 
 	// check function argument count
@@ -355,12 +356,6 @@ void exec_fun_call(struct VM* vm) {
 		envstack_assignName(fun->funEnvStack, fun->funArgs[i], fun->funClosureStack->values[i]);
 	}
 
-	// make closure if not enough arguments
-	if (argc < funArgc) {
-		valuestack_push(vm->valueStack, fun);
-		return;
-	}
-
 	// assign rest of arguments
 	if (funArgc == 0) {
 		struct Value* nullVal = valuestack_pop(vm->valueStack);
@@ -375,6 +370,14 @@ void exec_fun_call(struct VM* vm) {
 			envstack_storeName(fun->funEnvStack, fun->funArgs[i]);
 			envstack_assignName(fun->funEnvStack, fun->funArgs[i], arg);
 		}
+	}
+
+	// make closure if not enough arguments
+	if (argc < funArgc) {
+		valuestack_push(vm->valueStack, fun);
+		*envstack_peek(fun->funEnvStack)->inUse -= 1;
+		envstack_pop(fun->funEnvStack);
+		return;
 	}
 
 	// push to call stack and assign return address

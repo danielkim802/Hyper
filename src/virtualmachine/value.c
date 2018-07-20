@@ -3,6 +3,7 @@
 #include "value.h"
 #include "env.h"
 #include "envstack.h"
+#include "valuestack.h"
 
 struct Value* value_make(enum Type type) {
 	struct Value* value = malloc(sizeof(struct Value));
@@ -17,6 +18,7 @@ void value_free(struct Value* value) {
 		case FUN:
 			*value->funEnvStack->envs[1].inUse -= 1;
 			envstack_free(value->funEnvStack);
+			valuestack_free(value->funClosureStack);
 			for (uint64_t i = 0; i < value->funArgc; i ++)
 				free(value->funArgs[i]);
 			free(value->funArgs);
