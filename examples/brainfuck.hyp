@@ -1,0 +1,88 @@
+; brainfuck interpreter
+var brainfuck = struct {
+	; setup main fields
+	var program = ''
+	var pc = 0
+	var data = [0]
+	var dp = 0
+
+	; >
+	var exec_incrdp = fun {
+		if dp == len data - 1 { data = data + [0] }
+		dp = dp + 1
+	}
+
+	; <
+	var exec_decrdp = fun {
+		if dp == 0 { data = [0] + data } 
+		dp = dp - 1
+	}
+
+	; +
+	var exec_incr = fun { data[dp] = data[dp] + 1 }
+
+	; -
+	var exec_decr = fun { data[dp] = data[dp] - 1 }
+
+	; .
+	var exec_output = fun { print data[dp] }
+
+	; ,
+	var exec_input = fun {}
+
+	; [
+	var exec_begin = fun {
+		if data[dp] == 0 {
+			var stack = 0
+			while program[pc] != ']' or stack != 1 {
+				if program[pc] == '[' { stack = stack + 1 } 
+				elif program[pc] == ']' { stack = stack - 1 }
+				pc = pc + 1
+			}
+		}
+	}
+
+	; ]
+	var exec_end = fun {
+		if data[dp] != 0 {
+			var stack = 0
+			while program[pc] != '[' or stack != 1 {
+				if program[pc] == ']' { stack = stack + 1 } 
+				elif program[pc] == '[' { stack = stack - 1 }
+				pc = pc - 1
+			}
+		}
+	}
+
+	; execute commands
+	var exec = fun {
+		if program[pc] == '>' { exec_incrdp null } 
+		elif program[pc] == '<' { exec_decrdp null }
+		elif program[pc] == '+' { exec_incr null }
+		elif program[pc] == '-' { exec_decr null }
+		elif program[pc] == '.' { exec_output null }
+		elif program[pc] == ',' { exec_input null }
+		elif program[pc] == '[' { exec_begin null }
+		elif program[pc] == ']' { exec_end null }
+	}
+
+	var load_program = fun p { program = p }
+
+	var run = fun { 
+		while pc < len program { 
+			exec null
+			pc = pc + 1
+		}
+	}
+}
+
+var program = '
+++++++++++
+[[
+	>++
+	<-
+]] >.
+'
+brainfuck.load_program program
+brainfuck.run null
+print brainfuck.data
