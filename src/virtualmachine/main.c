@@ -7,7 +7,7 @@ int main(int argc, char* argv[]) {
 		printf("usage: hyper [filename]\n");
 		return 0;
 	}
-
+	
 	// compile to bytecode
 	if (!compile(argv[1]))
 		return 0;

@@ -1,2 +1,0 @@
-python compiler/hyper.py "$1"
-./virtualmachine/hypervm "$1c"

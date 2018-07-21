@@ -4,7 +4,7 @@ int compile(char* filename) {
 	Py_Initialize();
 	PyObject* sys = PyImport_ImportModule("sys");
 	PyObject* path = PyObject_GetAttrString(sys, "path");
-	PyList_Append(path, PyString_FromString("../compiler"));
+	PyList_Append(path, PyString_FromString("src/compiler"));
 
 	PyObject* name = PyString_FromString("hypercompiler");
 	PyObject* module = PyImport_Import(name);
