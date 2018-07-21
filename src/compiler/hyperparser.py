@@ -822,51 +822,6 @@ class Parser(object):
 	#           ((NEWLINE | SPACE)* ELIF expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE)* 
 	#           [(NEWLINE | SPACE)* ELSE (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE] [SPACE]
 	def if_stmt(self):
-		# iftoken = self.token
-		# self.eat(IF)
-		# ifcond = self.expr()
-		# self.eat_newline_space()
-		# self.eat(LBRACE)
-		# ifcompound_stmt = self.compound_stmt()
-		# self.eat(RBRACE)
-
-		# self.eat_space()
-		# while self.token.type == self.peek().type == NEWLINE:
-		# 	self.eat(NEWLINE)
-		# 	self.eat_space()
-
-		# elifs = []
-		# while self.token.type == ELIF or self.peek().type == ELIF:
-		# 	if self.token.type == NEWLINE:
-		# 		self.eat(NEWLINE)
-		# 	eliftoken = self.token
-		# 	self.eat(ELIF)
-		# 	elifcond = self.expr()
-		# 	self.eat_newline_space()
-		# 	self.eat(LBRACE)
-		# 	elifcompound_stmt = self.compound_stmt()
-		# 	self.eat(RBRACE)
-		# 	elifs += [(eliftoken, elifcond, elifcompound_stmt)]
-
-		# 	self.eat_space()
-		# 	while self.token.type == self.peek().type == NEWLINE:
-		# 		self.eat(NEWLINE)
-		# 		self.eat_space()
-
-		# if self.token.type == ELSE or self.peek().type == ELSE:
-		# 	if self.token.type == NEWLINE:
-		# 		self.eat(NEWLINE)
-		# 	elsetoken = self.token
-		# 	self.eat(ELSE)
-		# 	self.eat_newline_space()
-		# 	self.eat(LBRACE)
-		# 	elsecompound_stmt = self.compound_stmt()
-		# 	self.eat(RBRACE)
-		# 	self.eat_space()
-		# 	return AST_If((iftoken, ifcond, ifcompound_stmt), elifs, (elsetoken, elsecompound_stmt))
-		# self.eat_space()
-		# return AST_If((iftoken, ifcond, ifcompound_stmt), elifs, None)
-
 		iftoken = self.token
 		self.eat(IF)
 		ifcond = self.expr()

@@ -1,4 +1,4 @@
-import parser
+import hyperparser
 import struct
 import sys
 
@@ -101,7 +101,7 @@ class Compiler(ASTTraverser):
 			print filename + " No such file"
 			sys.exit(0)
 		self.file = filename
-		self.parser = parser.Parser(text)
+		self.parser = hyperparser.Parser(text)
 		self.buffer = bytearray()
 		self.line = 1
 		self.warnings = ""
@@ -111,18 +111,18 @@ class Compiler(ASTTraverser):
 
 	def save(self, type):
 		pos = len(self.buffer)
-		if type == parser.FLOAT:
+		if type == hyperparser.FLOAT:
 			self.buffer += 8 * chr(0)
-		elif type == parser.INT:
+		elif type == hyperparser.INT:
 			self.buffer += 8 * chr(0)
-		elif type == parser.BOOL:
+		elif type == hyperparser.BOOL:
 			self.buffer += chr(0)
 		return pos
 
 	def write_saved(self, position, type, obj):
-		if type == parser.FLOAT:
+		if type == hyperparser.FLOAT:
 			typ = 'd'
-		elif type == parser.INT:
+		elif type == hyperparser.INT:
 			typ = 'Q'
 
 			if obj > 0xFFFFFFFFFFFFFFFF:
@@ -131,9 +131,9 @@ class Compiler(ASTTraverser):
 				self.warning("Integer overflow")
 
 			obj &= 0xFFFFFFFFFFFFFFFF
-		elif type == parser.BOOL:
+		elif type == hyperparser.BOOL:
 			typ = 'c'
-		elif type == parser.STRING:
+		elif type == hyperparser.STRING:
 			obj += chr(0)
 			typ = str(len(obj)) + 's'
 		else:
@@ -146,12 +146,12 @@ class Compiler(ASTTraverser):
 		if token is not None:
 			self.line = token.line
 		self.buffer += chr(cmd)
-		self.write_value(parser.INT, self.line)
+		self.write_value(hyperparser.INT, self.line)
 
 	def write_value(self, type, obj):
-		if type == parser.FLOAT:
+		if type == hyperparser.FLOAT:
 			typ = 'd'
-		elif type == parser.INT:
+		elif type == hyperparser.INT:
 			typ = 'Q'
 
 			sign = (obj >> 63) & 1
@@ -163,9 +163,9 @@ class Compiler(ASTTraverser):
 				self.warning("Integer overflow (%i -> %i)" % (obj, newobj))
 
 			obj &= 0xFFFFFFFFFFFFFFFF
-		elif type == parser.BOOL:
+		elif type == hyperparser.BOOL:
 			typ = 'c'
-		elif type == parser.STRING:
+		elif type == hyperparser.STRING:
 			obj += chr(0)
 			typ = str(len(obj)) + 's'
 		else:
@@ -180,21 +180,21 @@ class Compiler(ASTTraverser):
 		self.visit(node.left)
 		self.visit(node.right)
 
-		if node.op.type == parser.ADD:
+		if node.op.type == hyperparser.ADD:
 			self.write_cmd(ADD, node.token)
-		if node.op.type == parser.SUB:
+		if node.op.type == hyperparser.SUB:
 			self.write_cmd(SUB, node.token)
-		if node.op.type == parser.MUL:
+		if node.op.type == hyperparser.MUL:
 			self.write_cmd(MUL, node.token)
-		if node.op.type == parser.DIV:
+		if node.op.type == hyperparser.DIV:
 			self.write_cmd(DIV, node.token)
 
 	def visit_UnaryOp(self, node):
 		self.visit(node.right)
 
-		if node.op.type == parser.ADD:
+		if node.op.type == hyperparser.ADD:
 			self.write_cmd(PLUS, node.token)
-		if node.op.type == parser.SUB:
+		if node.op.type == hyperparser.SUB:
 			self.write_cmd(MINUS, node.token)
 
 	def visit_Int(self, node):
@@ -218,32 +218,32 @@ class Compiler(ASTTraverser):
 
 	def visit_Name(self, node):
 		self.write_cmd(LOAD_NAME, node.token)
-		self.write_value(parser.STRING, node.name)
+		self.write_value(hyperparser.STRING, node.name)
 
 	def visit_CompBinOp(self, node):
 		self.visit(node.left)
 		self.visit(node.right)
 
-		if node.op.type == parser.LT:
+		if node.op.type == hyperparser.LT:
 			self.write_cmd(LT, node.token)
-		if node.op.type == parser.LTE:
+		if node.op.type == hyperparser.LTE:
 			self.write_cmd(LTE, node.token)
-		if node.op.type == parser.GT:
+		if node.op.type == hyperparser.GT:
 			self.write_cmd(GT, node.token)
-		if node.op.type == parser.GTE:
+		if node.op.type == hyperparser.GTE:
 			self.write_cmd(GTE, node.token)
-		if node.op.type == parser.NE:
+		if node.op.type == hyperparser.NE:
 			self.write_cmd(NE, node.token)
-		if node.op.type == parser.EQ:
+		if node.op.type == hyperparser.EQ:
 			self.write_cmd(EQ, node.token)
 
 	def visit_BoolBinOp(self, node):
 		self.visit(node.left)
 		self.visit(node.right)
 
-		if node.op.type == parser.AND:
+		if node.op.type == hyperparser.AND:
 			self.write_cmd(AND, node.token)
-		if node.op.type == parser.OR:
+		if node.op.type == hyperparser.OR:
 			self.write_cmd(OR, node.token)
 
 	def visit_Pipe(self, node):
@@ -251,13 +251,13 @@ class Compiler(ASTTraverser):
 		self.visit(node.right)
 
 		self.write_cmd(FUN_CALL, node.token)
-		self.write_value(parser.INT, 1)
-		self.write_value(parser.INT, len(self.buffer) + 8)
+		self.write_value(hyperparser.INT, 1)
+		self.write_value(hyperparser.INT, len(self.buffer) + 8)
 
 	def visit_BoolUnaryOp(self, node):
 		self.visit(node.right)
 
-		if node.op.type == parser.NOT:
+		if node.op.type == hyperparser.NOT:
 			self.write_cmd(NOT, node.token)
 
 	def visit_FunCall(self, node):
@@ -265,13 +265,13 @@ class Compiler(ASTTraverser):
 			self.visit(i)
 		self.visit(node.fun)
 		self.write_cmd(FUN_CALL)
-		self.write_value(parser.INT, len(node.args))
-		self.write_value(parser.INT, len(self.buffer) + 8)
+		self.write_value(hyperparser.INT, len(node.args))
+		self.write_value(hyperparser.INT, len(self.buffer) + 8)
 
 	def visit_AttrRef(self, node):
 		self.visit(node.obj)
 		self.write_cmd(GET_ATTR, node.token)
-		self.write_value(parser.STRING, node.ref.name)
+		self.write_value(hyperparser.STRING, node.ref.name)
 
 	def visit_ArrayIndex(self, node):
 		self.visit(node.arr)
@@ -282,7 +282,7 @@ class Compiler(ASTTraverser):
 		for i in reversed(node.arr):
 			self.visit(i)
 		self.write_cmd(MAKE_ARR, node.token)
-		self.write_value(parser.INT, len(node.arr))
+		self.write_value(hyperparser.INT, len(node.arr))
 
 	def visit_StructDef(self, node):
 		self.write_cmd(PUSH_ENV)
@@ -291,40 +291,40 @@ class Compiler(ASTTraverser):
 
 	def visit_FunDef(self, node):
 		self.write_cmd(MAKE_FUN, node.token)
-		addr = self.save(parser.INT)
-		self.write_value(parser.INT, len(node.args))
+		addr = self.save(hyperparser.INT)
+		self.write_value(hyperparser.INT, len(node.args))
 		for i in node.args:
-			self.write_value(parser.STRING, i.name)
+			self.write_value(hyperparser.STRING, i.name)
 		self.write_cmd(JMP)
-		jmp_addr = self.save(parser.INT)
-		self.write_saved(addr, parser.INT, len(self.buffer))
+		jmp_addr = self.save(hyperparser.INT)
+		self.write_saved(addr, hyperparser.INT, len(self.buffer))
 		self.visit(node.content)
-		self.write_saved(jmp_addr, parser.INT, len(self.buffer))
+		self.write_saved(jmp_addr, hyperparser.INT, len(self.buffer))
 
 	def visit_Assign(self, node):
 		self.visit(node.right)
-		if type(node.var) == parser.AST_Name:
+		if type(node.var) == hyperparser.AST_Name:
 			self.write_cmd(ASSIGN_NAME, node.token)
-			self.write_value(parser.STRING, node.var.name)
-		if type(node.var) == parser.AST_ArrayIndex:
+			self.write_value(hyperparser.STRING, node.var.name)
+		if type(node.var) == hyperparser.AST_ArrayIndex:
 			self.visit(node.var.idx)
 			self.visit(node.var.arr)
 			self.write_cmd(STORE_ARR, node.token)
-		if type(node.var) == parser.AST_AttrRef:
+		if type(node.var) == hyperparser.AST_AttrRef:
 			self.visit(node.var.obj)
 			self.write_cmd(STORE_ATTR, node.token)
-			self.write_value(parser.STRING, node.var.ref.name)
+			self.write_value(hyperparser.STRING, node.var.ref.name)
 
 	def visit_Declaration(self, node):
 		if node.right is not None:
 			self.visit(node.right)
 
 		self.write_cmd(STORE_NAME, node.token)
-		self.write_value(parser.STRING, node.var.name)
+		self.write_value(hyperparser.STRING, node.var.name)
 
 		if node.right is not None:
 			self.write_cmd(ASSIGN_NAME)
-			self.write_value(parser.STRING, node.var.name)
+			self.write_value(hyperparser.STRING, node.var.name)
 
 	def visit_Return(self, node):
 		if node.expr is not None:
@@ -338,33 +338,33 @@ class Compiler(ASTTraverser):
 			self.visit(node.expr)
 		else:
 			self.write_cmd(LOAD_STRING, node.token)
-			self.write_value(parser.STRING, '')
+			self.write_value(hyperparser.STRING, '')
 		self.write_cmd(PRINT, node.token)
 
 	def visit_If(self, node):
 		iftoken, ifcondition, ifcompound = node.ifcontent
 		self.visit(ifcondition)
 		self.write_cmd(BFALSE, iftoken)
-		ifaddr = self.save(parser.INT)
+		ifaddr = self.save(hyperparser.INT)
 		self.write_cmd(PUSH_ENV, iftoken)
 		self.visit(ifcompound)
 		self.write_cmd(POP_ENV)
 		self.write_cmd(JMP)
-		ifjmp = self.save(parser.INT)
-		self.write_saved(ifaddr, parser.INT, len(self.buffer))
+		ifjmp = self.save(hyperparser.INT)
+		self.write_saved(ifaddr, hyperparser.INT, len(self.buffer))
 
 		elifjmps = []
 		for (eliftoken, elifcondition, elifcompound) in node.elifcontents:
 			self.visit(elifcondition)
 			self.write_cmd(BFALSE, eliftoken)
-			elifaddr = self.save(parser.INT)
+			elifaddr = self.save(hyperparser.INT)
 			self.write_cmd(PUSH_ENV, eliftoken)
 			self.visit(elifcompound)
 			self.write_cmd(POP_ENV)
 			self.write_cmd(JMP)
-			elifjmp = self.save(parser.INT)
+			elifjmp = self.save(hyperparser.INT)
 			elifjmps += [elifjmp]
-			self.write_saved(elifaddr, parser.INT, len(self.buffer))
+			self.write_saved(elifaddr, hyperparser.INT, len(self.buffer))
 
 		if node.elsecontent is not None:
 			elsetoken, elsecompound = node.elsecontent
@@ -372,28 +372,28 @@ class Compiler(ASTTraverser):
 			self.visit(elsecompound)
 			self.write_cmd(POP_ENV)
 
-		self.write_saved(ifjmp, parser.INT, len(self.buffer))
+		self.write_saved(ifjmp, hyperparser.INT, len(self.buffer))
 		for elifjmp in elifjmps:
-			self.write_saved(elifjmp, parser.INT, len(self.buffer))
+			self.write_saved(elifjmp, hyperparser.INT, len(self.buffer))
 
 	def visit_For(self, node):
 		# loop setup
 		self.write_cmd(PUSH_ENV, node.token)
 		self.write_cmd(STORE_NAME, node.var.token)
-		self.write_value(parser.STRING, node.var.name)
+		self.write_value(hyperparser.STRING, node.var.name)
 		self.write_cmd(LOAD_INT)
-		self.write_value(parser.INT, 0)
+		self.write_value(hyperparser.INT, 0)
 		self.write_cmd(ASSIGN_NAME)
-		self.write_value(parser.STRING, node.var.name)
+		self.write_value(hyperparser.STRING, node.var.name)
 		loop_addr = len(self.buffer)
 
 		# condition check
 		self.write_cmd(LOAD_NAME, node.var.token)
-		self.write_value(parser.STRING, node.var.name)
+		self.write_value(hyperparser.STRING, node.var.name)
 		self.visit(node.expr)
 		self.write_cmd(LT)
 		self.write_cmd(BFALSE)
-		end_addr = self.save(parser.INT)
+		end_addr = self.save(hyperparser.INT)
 
 		# body
 		self.write_cmd(PUSH_ENV)
@@ -402,17 +402,17 @@ class Compiler(ASTTraverser):
 
 		# increment counter
 		self.write_cmd(LOAD_INT)
-		self.write_value(parser.INT, 1)
+		self.write_value(hyperparser.INT, 1)
 		self.write_cmd(LOAD_NAME)
-		self.write_value(parser.STRING, node.var.name)
+		self.write_value(hyperparser.STRING, node.var.name)
 		self.write_cmd(ADD)
 		self.write_cmd(ASSIGN_NAME)
-		self.write_value(parser.STRING, node.var.name)
+		self.write_value(hyperparser.STRING, node.var.name)
 		self.write_cmd(JMP)
-		self.write_value(parser.INT, loop_addr)
+		self.write_value(hyperparser.INT, loop_addr)
 
 		# end of loop
-		self.write_saved(end_addr, parser.INT, len(self.buffer))
+		self.write_saved(end_addr, hyperparser.INT, len(self.buffer))
 		self.write_cmd(POP_ENV)
 
 	def visit_While(self, node):
@@ -420,17 +420,17 @@ class Compiler(ASTTraverser):
 		jmp_addr = len(self.buffer)
 		self.visit(node.condition)
 		self.write_cmd(BFALSE)
-		end_addr = self.save(parser.INT)
+		end_addr = self.save(hyperparser.INT)
 		
 		# body
 		self.write_cmd(PUSH_ENV, node.token)
 		self.visit(node.content)
 		self.write_cmd(POP_ENV)
 		self.write_cmd(JMP)
-		self.write_value(parser.INT, jmp_addr)
+		self.write_value(hyperparser.INT, jmp_addr)
 		
 		# end of loop
-		self.write_saved(end_addr, parser.INT, len(self.buffer))
+		self.write_saved(end_addr, hyperparser.INT, len(self.buffer))
 
 	def visit_EOF(self, node):
 		self.write_cmd(HALT, node.token)
@@ -443,20 +443,20 @@ class Compiler(ASTTraverser):
 
 	def declare_std_len_arr(self):
 		self.write_cmd(MAKE_FUN)
-		std_len_arr_ptr = self.save(parser.INT)
-		self.write_value(parser.INT, 1)
-		self.write_value(parser.STRING, "arr")
+		std_len_arr_ptr = self.save(hyperparser.INT)
+		self.write_value(hyperparser.INT, 1)
+		self.write_value(hyperparser.STRING, "arr")
 		self.write_cmd(STORE_NAME)
-		self.write_value(parser.STRING, "len")
+		self.write_value(hyperparser.STRING, "len")
 		self.write_cmd(ASSIGN_NAME)
-		self.write_value(parser.STRING, "len")
+		self.write_value(hyperparser.STRING, "len")
 		return std_len_arr_ptr
 
 	def write_std_len_arr(self, ptr):
-		self.write_saved(ptr, parser.INT, len(self.buffer))
+		self.write_saved(ptr, hyperparser.INT, len(self.buffer))
 		self.write_cmd(PUSH_ENV)
 		self.write_cmd(LOAD_NAME)
-		self.write_value(parser.STRING, "arr")
+		self.write_value(hyperparser.STRING, "arr")
 		self.write_cmd(LEN_ARR)
 		self.write_cmd(RETURN)
 
@@ -478,6 +478,7 @@ class Compiler(ASTTraverser):
 			print self.warnings
 		file = open(self.file + 'c', 'w')
 		file.write(self.buffer)
+		return 0
 
 class Disassembler(object):
 	def __init__(self, file):
