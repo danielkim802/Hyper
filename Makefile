@@ -4,7 +4,7 @@ ifeq ($(VERBOSE),1)
 endif
 
 all:
-	$(V) $(MAKE) -C src/virtualmachine all
+	$(V) $(MAKE) -C src/virtualmachine
 	$(V) cp bin/hyper hyper
 
 clean:
