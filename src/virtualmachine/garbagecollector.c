@@ -133,6 +133,5 @@ void garbagecollector_freeValues(struct GarbageCollector* gc) {
 
 void garbagecollector_clean(struct GarbageCollector* gc, struct VM* vm) {
 	garbagecollector_markValues(vm);
-	garbagecollector_print(vm->gc);
 	garbagecollector_freeValues(gc);
 }

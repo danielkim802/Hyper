@@ -9,8 +9,8 @@ int main(int argc, char* argv[]) {
 	}
 
 	// compile to bytecode
-	// if (!compile(argv[1]))
-		// return 0;
+	if (!compile(argv[1]))
+		return 0;
 
 	// run bytecode
 	unsigned int len = strlen(argv[1]);

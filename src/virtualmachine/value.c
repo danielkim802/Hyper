@@ -24,6 +24,7 @@ void value_free(struct Value* value) {
 			free(value->funArgs);
 			break;
 		case STRUCT:
+			*value->structValue->inUse -= 1;
 			env_free(value->structValue);
 			break;
 		case ARR:

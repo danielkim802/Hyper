@@ -610,70 +610,95 @@ void exec_print(struct VM* vm) {
 }
 
 void exec_use_file(struct VM* vm) {
-	free(vm->chunk.stringArg);
-	// // construct file name
-	// char* file;
-	// char* filepath = (char*) vm->dir;
-	// char* filename = (char*) vm->chunk.stringArg;
-	// uint64_t pathlen = strlen(filepath);
-	// uint64_t namelen = strlen(filename);
-	// file = malloc(pathlen + namelen + 1);
-	// strcpy(file, filepath);
-	// strcat(file, filename);
-	// file[pathlen + namelen] = 0;
+	// construct file name
+	char* file;
+	char* filepath = (char*) vm->dir;
+	char* filename = (char*) vm->chunk.stringArgs[0];
+	uint64_t pathlen = strlen(filepath);
+	uint64_t namelen = strlen(filename);
+	file = malloc(pathlen + namelen + 1);
+	strcpy(file, filepath);
+	strcat(file, filename);
+	file[pathlen + namelen] = 0;
+	free(vm->chunk.stringArgs[0]);
 
-	// // compile bytecode
-	// if (!compile(file))
-	// 	exit(0);
+	// compile bytecode
+	if (!compile(file))
+		exit(0);
 
-	// // save context
-	// contextstack_push(vm->contextStack, vm);
+	// save context
+	contextstack_push(vm->contextStack, vm);
 
-	// // setup stacks
-	// vm->valueStack = valuestack_make();
-	// vm->callStack = valuestack_make();
-	// vm->envStack = envstack_make();
-	// envstack_push(vm->envStack, 0);
-	// vm->globalEnv = malloc(sizeof(struct Env));
-	// *vm->globalEnv = *envstack_peek(vm->envStack);
-	// *vm->globalEnv->inUse = 1;
+	// setup stacks
+	vm->valueStack = valuestack_make();
+	vm->callStack = valuestack_make();
+	vm->envStack = envstack_make();
+	envstack_push(vm->envStack, 0);
+	vm->globalEnv = malloc(sizeof(struct Env));
+	*vm->globalEnv = *envstack_peek(vm->envStack);
+	*vm->globalEnv->inUse = 1;
 
-	// // setup dummy function in call stack for global environment
-	// struct Value* dummy = value_make(FUN);
-	// dummy->funEnvStack = vm->envStack;
-	// valuestack_push(vm->callStack, dummy);
+	// setup dummy function in call stack for global environment
+	struct Value* dummy = value_make(FUN);
+	dummy->funValue = 0;
+	dummy->funArgc = 0;
+	dummy->funArgs = malloc(0);
+	dummy->funClosureStack = valuestack_make();
+	dummy->funEnvStack = vm->envStack;
+	valuestack_push(vm->callStack, dummy);
 
-	// // open file and get filesize
-	// char* filec = malloc(pathlen + namelen + 2);
-	// strcpy(filec, file);
-	// filec[pathlen + namelen] = 'c';
-	// filec[pathlen + namelen + 1] = 0;
-	// FILE* f = fopen(filec, "r");
-	// fseek(f, 0, SEEK_END);
-	// uint64_t filesize = ftell(f);
-	// rewind(f);
+	// open file and get filesize
+	char* filec = malloc(pathlen + namelen + 2);
+	strcpy(filec, file);
+	filec[pathlen + namelen] = 'c';
+	filec[pathlen + namelen + 1] = 0;
+	FILE* f = fopen(filec, "r");
+	fseek(f, 0, SEEK_END);
+	uint64_t filesize = ftell(f);
+	rewind(f);
+	free(file);
+	free(filec);
 
-	// // load main program memory and set pc
-	// vm->mainMemSize = filesize;
-	// vm->mainMem = malloc(sizeof(uint8_t) * filesize);
-	// for (uint64_t i = 0; i < filesize; i ++)
-	// 	vm->mainMem[i] = fgetc(f);
-	// fclose(f);
+	// load main program memory and set pc
+	vm->mainMemSize = filesize;
+	vm->mainMem = malloc(sizeof(uint8_t) * filesize);
+	for (uint64_t i = 0; i < filesize; i ++)
+		vm->mainMem[i] = fgetc(f);
+	fclose(f);
 
-	// // set flags
-	// vm->pc = 0;
-	// vm->halt = 0;
-	// vm->lastCleaned = 0;
+	// set flags
+	vm->pc = 0;
+	vm->halt = 0;
 
-	// // run vm
-	// vm_run(vm);
+	// run vm
+	vm_run(vm);
 
-	// // cleanup
-	// free(vm->mainMem);
-	// valuestack_free(vm->valueStack);
-	// valuestack_free(vm->callStack);
-	// envstack_free(vm->envStack);
-	// free(vm->globalEnv);
+	// save environment for struct
+	struct Env importStruct = *vm->globalEnv;
+
+	// cleanup
+	envstack_push(vm->envStack, 0);
+	*envstack_peek(vm->envStack)->inUse = 1;
+	valuestack_pop(vm->callStack);
+	while (vm->valueStack->size > 0)
+		valuestack_pop(vm->valueStack);
+	free(vm->mainMem);
+	free(vm->globalEnv);
+	valuestack_free(vm->valueStack);
+	valuestack_free(vm->callStack);
+
+	// restore context
+	struct Context* context = contextstack_pop(vm->contextStack);
+	vm_loadContext(vm, context);
+
+	// load struct into environment
+	struct Value* value = value_make(STRUCT);
+	value->structValue = malloc(sizeof(struct Env));
+	*value->structValue = importStruct;
+	envstack_storeName(vm->envStack, vm->chunk.stringArgs[1]);
+	envstack_assignName(vm->envStack, vm->chunk.stringArgs[1], value);
+	free(vm->chunk.stringArgs[1]);
+	free(vm->chunk.stringArgs);
 }
 
 void exec_btrue(struct VM* vm) {

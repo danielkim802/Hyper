@@ -437,6 +437,7 @@ class Compiler(ASTTraverser):
 	def visit_Use(self, node):
 		self.write_cmd(USE_FILE)
 		self.write_value(hyperparser.STRING, node.file)
+		self.write_value(hyperparser.STRING, node.name)
 
 	def visit_EOF(self, node):
 		self.write_cmd(HALT, node.token)

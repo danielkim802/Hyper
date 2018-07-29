@@ -45,6 +45,7 @@ DOT      = 'DOT'
 VAR      = 'VAR'
 PIPE     = 'PIPE'
 USE      = 'USE'
+AS       = 'AS'
 
 # control, keywords
 IF       = 'IF'
@@ -79,7 +80,8 @@ keywords = {
 	"print"   : PRINT,
 	"null"    : NULL,
 	"var"     : VAR,
-	"use"     : USE
+	"use"     : USE,
+	"as"      : AS
 }
 
 class Token(object):
@@ -442,9 +444,10 @@ class AST_Print(AST):
 		self.expr = expr
 
 class AST_Use(AST):
-	def __init__(self, token, file):
+	def __init__(self, token, file, name):
 		self.token = token
 		self.file = file
+		self.name = name
 
 class AST_Statement(AST):
 	def __init__(self, stmt):
@@ -918,14 +921,19 @@ class Parser(object):
 			return AST_Print(token, expr)
 		return AST_Print(token, None)
 
-	# use_stmt : USE SPACE STRING
+	# use_stmt : USE SPACE STRING SPACE AS SPACE NAME
 	def use_stmt(self):
 		token = self.token
 		self.eat(USE)
 		self.eat(SPACE)
 		file = self.token.value
 		self.eat(STRING)
-		return AST_Use(token, file)
+		self.eat(SPACE)
+		self.eat(AS)
+		self.eat(SPACE)
+		name = self.token.value
+		self.eat(NAME)
+		return AST_Use(token, file, name)
 
 	# statement : expr | assign_stmt | if_stmt | return_stmt | while_stmt | for_stmt | print_stmt | declaration_stmt | use_stmt
 	def statement(self):
