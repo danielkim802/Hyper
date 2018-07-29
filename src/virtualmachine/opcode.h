@@ -45,14 +45,15 @@ static const uint8_t STORE_ATTR  = 0x1F;
 static const uint8_t STORE_NAME  = 0x20;
 static const uint8_t RETURN      = 0x21;
 static const uint8_t PRINT       = 0x22;
+static const uint8_t USE_FILE    = 0x23;
 
 // control
-static const uint8_t BTRUE       = 0x23;
-static const uint8_t BFALSE      = 0x24;
-static const uint8_t JMP         = 0x25;
-static const uint8_t HALT        = 0x26;
+static const uint8_t BTRUE       = 0x24;
+static const uint8_t BFALSE      = 0x25;
+static const uint8_t JMP         = 0x26;
+static const uint8_t HALT        = 0x27;
 
 // library functions
-static const uint8_t LEN_ARR     = 0x27;
+static const uint8_t LEN_ARR     = 0x28;
 
 #endif /* OPCODE_H */

@@ -21,5 +21,7 @@ int compile(char* filename) {
 	PyObject* res = PyObject_CallObject(func, NULL);
 	if (res == NULL)
 		return 0;
+
+	Py_Finalize();
 	return 1;
 }

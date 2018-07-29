@@ -138,6 +138,9 @@ uint64_t chunk_get(struct Chunk* chunk, uint8_t* mem) {
 			break;
 		case RETURN: break;
 		case PRINT: break;
+		case USE_FILE:
+			ptr += read_string(chunk, &mem[ptr]);
+			break;
 
 		// control
 		case BTRUE:
@@ -221,6 +224,9 @@ void chunk_free(struct Chunk* chunk) {
 			break;
 		case RETURN: break;
 		case PRINT: break;
+		case USE_FILE:
+			free(chunk->stringArg);
+			break;
 
 		// control
 		case BTRUE: break;
@@ -284,6 +290,7 @@ void chunk_print(struct Chunk* chunk) {
 		case STORE_NAME: printf("STORE_NAME %s", chunk->stringArg); break;
 		case RETURN: printf("RETURN"); break;
 		case PRINT: printf("PRINT"); break;
+		case USE_FILE: printf("USE_FILE %s", chunk->stringArg); break;
 
 		// control
 		case BTRUE: printf("BTRUE %llu", chunk->uintArg); break;

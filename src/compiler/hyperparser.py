@@ -44,6 +44,7 @@ COMMA    = 'COMMA'
 DOT      = 'DOT'
 VAR      = 'VAR'
 PIPE     = 'PIPE'
+USE      = 'USE'
 
 # control, keywords
 IF       = 'IF'
@@ -77,7 +78,8 @@ keywords = {
 	"return"  : RETURN,
 	"print"   : PRINT,
 	"null"    : NULL,
-	"var"     : VAR
+	"var"     : VAR,
+	"use"     : USE
 }
 
 class Token(object):
@@ -438,6 +440,11 @@ class AST_Print(AST):
 	def __init__(self, token, expr):
 		self.token = token
 		self.expr = expr
+
+class AST_Use(AST):
+	def __init__(self, token, file):
+		self.token = token
+		self.file = file
 
 class AST_Statement(AST):
 	def __init__(self, stmt):
@@ -911,7 +918,16 @@ class Parser(object):
 			return AST_Print(token, expr)
 		return AST_Print(token, None)
 
-	# statement : expr | assign_stmt | if_stmt | return_stmt | while_stmt | for_stmt | print_stmt | declaration_stmt
+	# use_stmt : USE SPACE STRING
+	def use_stmt(self):
+		token = self.token
+		self.eat(USE)
+		self.eat(SPACE)
+		file = self.token.value
+		self.eat(STRING)
+		return AST_Use(token, file)
+
+	# statement : expr | assign_stmt | if_stmt | return_stmt | while_stmt | for_stmt | print_stmt | declaration_stmt | use_stmt
 	def statement(self):
 		if self.token.type == IF:
 			return self.if_stmt()
@@ -925,6 +941,8 @@ class Parser(object):
 			return self.print_stmt()
 		if self.token.type == VAR:
 			return self.declaration_stmt()
+		if self.token.type == USE:
+			return self.use_stmt()
 		return self.assign_stmt()
 
 	# compound_stmt : ((statement | [SPACE]) NEWLINE)* [statement | SPACE]

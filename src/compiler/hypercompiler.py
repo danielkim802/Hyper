@@ -45,15 +45,16 @@ STORE_ATTR  = 0x1F
 STORE_NAME  = 0x20
 RETURN      = 0x21
 PRINT       = 0x22
+USE_FILE    = 0x23
 
 # control
-BTRUE       = 0x23
-BFALSE      = 0x24
-JMP         = 0x25
-HALT        = 0x26
+BTRUE       = 0x24
+BFALSE      = 0x25
+JMP         = 0x26
+HALT        = 0x27
 
 # library functions
-LEN_ARR     = 0x27
+LEN_ARR     = 0x28
 
 opcodes = {
 	# expressions
@@ -75,6 +76,7 @@ opcodes = {
 	# statements
 	ASSIGN_NAME : "assign_name", STORE_ARR   : "store_arr",   STORE_ATTR  : "store_attr",
 	STORE_NAME  : "store_name",  RETURN      : "return",      PRINT       : "print",
+	USE_FILE    : "use_file",
 
 	# control
 	BTRUE       : "btrue",       BFALSE      : "bfalse",
@@ -431,6 +433,10 @@ class Compiler(ASTTraverser):
 		
 		# end of loop
 		self.write_saved(end_addr, hyperparser.INT, len(self.buffer))
+
+	def visit_Use(self, node):
+		self.write_cmd(USE_FILE)
+		self.write_value(hyperparser.STRING, node.file)
 
 	def visit_EOF(self, node):
 		self.write_cmd(HALT, node.token)

@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 // turns debugging on which prints out commands and their byte numbers
-static const uint8_t  VM_DEBUG           = 0;
+static const uint8_t  VM_DEBUG           = 1;
 
 // prints value stack after each command
 static const uint8_t  VM_DEBUGVALUESTACK = 0;

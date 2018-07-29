@@ -3,6 +3,8 @@
 #include "garbagecollector.h"
 #include "value.h"
 #include "valuestack.h"
+#include "context.h"
+#include "contextstack.h"
 
 void garbagecollector_print(struct GarbageCollector* gc) {
 	printf("----gc\n");
@@ -22,6 +24,7 @@ struct GarbageCollector* garbagecollector_make() {
 	gc->values = malloc(sizeof(struct Value*));
 	gc->size = 0;
 	gc->max = 1;
+	value_gc = gc;
 	return gc;
 }
 
@@ -92,9 +95,20 @@ void mark_valueStack(struct ValueStack* vs) {
 		mark_value(vs->values[i]);
 }
 
+void mark_context(struct Context* context) {
+	mark_valueStack(context->valueStack);
+	mark_valueStack(context->callStack);
+}
+
+void mark_contextStack(struct ContextStack* cs) {
+	for (uint64_t i = 0; i < cs->size; i ++)
+		mark_context(&cs->contexts[i]);
+}
+
 void garbagecollector_markValues(struct VM* vm) {
 	mark_valueStack(vm->valueStack);
 	mark_valueStack(vm->callStack);
+	mark_contextStack(vm->contextStack);
 }
 
 void garbagecollector_freeValues(struct GarbageCollector* gc) {

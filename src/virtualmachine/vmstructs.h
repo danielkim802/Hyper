@@ -66,6 +66,27 @@ struct GarbageCollector {
 	uint64_t max;
 };
 
+struct Context {
+	uint8_t* mainMem;
+	uint64_t mainMemSize;
+	struct ValueStack* valueStack;
+	struct ValueStack* callStack;
+	struct EnvStack* envStack;
+	struct Env* globalEnv;
+
+	uint64_t pc;
+	uint8_t halt;
+	struct Chunk chunk;
+
+	uint64_t lastCleaned;
+};
+
+struct ContextStack {
+	struct Context* contexts;
+	uint64_t size;
+	uint64_t max;
+};
+
 // virtual machine
 struct VM {
 	// main datastructures
@@ -75,12 +96,14 @@ struct VM {
 	struct ValueStack* callStack;
 	struct EnvStack* envStack;
 	struct Env* globalEnv;
+	struct ContextStack* contextStack;
 	struct GarbageCollector* gc;
 
 	// control fields
 	uint64_t pc;
 	uint8_t halt;
 	struct Chunk chunk;
+	uint8_t* dir;
 
 	// flags
 	uint8_t debug;
@@ -88,9 +111,9 @@ struct VM {
 	uint8_t debugCallStack;
 	uint8_t debugEnvStacks;
 	uint8_t debugGarbage;
+	uint64_t maxCallStack;
 	uint64_t cleanPeriod;
 	uint64_t lastCleaned;
-	uint64_t maxCallStack;
 };
 
 #endif /* VMSTRUCTS_H */

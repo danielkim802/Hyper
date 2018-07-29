@@ -5,14 +5,17 @@
 #include "vmutils.h"
 
 // sets up the virtual machine
-void vm_init(struct VM* vm, char* filename);
+void vm_init(struct VM* vm, char* filepath, char* filename, struct GarbageCollector* gc);
 
-// creates a virtual machine; collects garbage every 
+// creates a virtual machine; collects garbage every
 // 'cleanPeriod' cycles
-struct VM* vm_make(char* filename);
+struct VM* vm_make(char* filepath, char* filename, struct GarbageCollector* gc);
 
 // disassembles and prints bytecode
 void vm_disassemble(struct VM* vm);
+
+// loads a context into the vm
+void vm_loadContext(struct VM* vm, struct Context* context);
 
 // frees the vm
 void vm_free(struct VM* vm);

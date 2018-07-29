@@ -50,7 +50,9 @@ for_stmt : FOR SPACE NAME SPACE TO expr (NEWLINE | SPACE)* LBRACE compound_stmt 
 
 print_stmt : PRINT [expr]
 
-statement : expr | assign_stmt | if_stmt | return_stmt | while_stmt | for_stmt | print_stmt | declaration_stmt
+use_stmt : USE SPACE STRING
+
+statement : expr | assign_stmt | if_stmt | return_stmt | while_stmt | for_stmt | print_stmt | declaration_stmt | use_stmt
 
 compound_stmt : ((statement | [SPACE]) NEWLINE)* [statement | SPACE]
 

@@ -6,5 +6,7 @@
 #include "env.h"
 #include "envstack.h"
 #include "garbagecollector.h"
+#include "context.h"
+#include "contextstack.h"
 
 #endif /* VMUTILS_H */

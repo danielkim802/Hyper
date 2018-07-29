@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "virtualmachine.h"
+#include "hypercompiler.h"
 #include "vmconfig.h"
 #include "chunk.h"
 #include "opcode.h"
@@ -608,6 +609,73 @@ void exec_print(struct VM* vm) {
 	printf("\n");
 }
 
+void exec_use_file(struct VM* vm) {
+	free(vm->chunk.stringArg);
+	// // construct file name
+	// char* file;
+	// char* filepath = (char*) vm->dir;
+	// char* filename = (char*) vm->chunk.stringArg;
+	// uint64_t pathlen = strlen(filepath);
+	// uint64_t namelen = strlen(filename);
+	// file = malloc(pathlen + namelen + 1);
+	// strcpy(file, filepath);
+	// strcat(file, filename);
+	// file[pathlen + namelen] = 0;
+
+	// // compile bytecode
+	// if (!compile(file))
+	// 	exit(0);
+
+	// // save context
+	// contextstack_push(vm->contextStack, vm);
+
+	// // setup stacks
+	// vm->valueStack = valuestack_make();
+	// vm->callStack = valuestack_make();
+	// vm->envStack = envstack_make();
+	// envstack_push(vm->envStack, 0);
+	// vm->globalEnv = malloc(sizeof(struct Env));
+	// *vm->globalEnv = *envstack_peek(vm->envStack);
+	// *vm->globalEnv->inUse = 1;
+
+	// // setup dummy function in call stack for global environment
+	// struct Value* dummy = value_make(FUN);
+	// dummy->funEnvStack = vm->envStack;
+	// valuestack_push(vm->callStack, dummy);
+
+	// // open file and get filesize
+	// char* filec = malloc(pathlen + namelen + 2);
+	// strcpy(filec, file);
+	// filec[pathlen + namelen] = 'c';
+	// filec[pathlen + namelen + 1] = 0;
+	// FILE* f = fopen(filec, "r");
+	// fseek(f, 0, SEEK_END);
+	// uint64_t filesize = ftell(f);
+	// rewind(f);
+
+	// // load main program memory and set pc
+	// vm->mainMemSize = filesize;
+	// vm->mainMem = malloc(sizeof(uint8_t) * filesize);
+	// for (uint64_t i = 0; i < filesize; i ++)
+	// 	vm->mainMem[i] = fgetc(f);
+	// fclose(f);
+
+	// // set flags
+	// vm->pc = 0;
+	// vm->halt = 0;
+	// vm->lastCleaned = 0;
+
+	// // run vm
+	// vm_run(vm);
+
+	// // cleanup
+	// free(vm->mainMem);
+	// valuestack_free(vm->valueStack);
+	// valuestack_free(vm->callStack);
+	// envstack_free(vm->envStack);
+	// free(vm->globalEnv);
+}
+
 void exec_btrue(struct VM* vm) {
 	struct Value* value = valuestack_pop(vm->valueStack);
 
@@ -650,9 +718,9 @@ void exec_len_arr(struct VM* vm) {
 	valuestack_push(vm->valueStack, res);
 }
 
-void (*exec_func[0x28]) (struct VM* vm);
+void (*exec_func[0x29]) (struct VM* vm);
 
-void vm_init(struct VM* vm, char* filename) {
+void vm_init(struct VM* vm, char* filepath, char* filename, struct GarbageCollector* gc) {
 	// setup stacks
 	vm->valueStack = valuestack_make();
 	vm->callStack = valuestack_make();
@@ -661,16 +729,26 @@ void vm_init(struct VM* vm, char* filename) {
 	vm->globalEnv = malloc(sizeof(struct Env));
 	*vm->globalEnv = *envstack_peek(vm->envStack);
 	*vm->globalEnv->inUse = 1;
-	vm->gc = garbagecollector_make();
-	value_gc = vm->gc;
+	vm->gc = gc;
+	vm->contextStack = contextstack_make();
+	vm->dir = (uint8_t*) filepath;
 
 	// setup dummy function in call stack for global environment
 	struct Value* dummy = value_make(FUN);
 	dummy->funEnvStack = vm->envStack;
 	valuestack_push(vm->callStack, dummy);
 
+	// construct file name
+	char* file;
+	uint64_t pathlen = strlen(filepath);
+	uint64_t namelen = strlen(filename);
+	file = malloc(pathlen + namelen + 1);
+	strcpy(file, filepath);
+	strcat(file, filename);
+	file[pathlen + namelen] = 0;
+
 	// open file and get filesize
-	FILE* f = fopen(filename, "r");
+	FILE* f = fopen(file, "r");
 	fseek(f, 0, SEEK_END);
 	uint64_t filesize = ftell(f);
 	rewind(f);
@@ -681,6 +759,7 @@ void vm_init(struct VM* vm, char* filename) {
 	for (uint64_t i = 0; i < filesize; i ++)
 		vm->mainMem[i] = fgetc(f);
 	fclose(f);
+	free(file);
 
 	// set flags and other parameters
 	vm->pc = 0;
@@ -730,6 +809,7 @@ void vm_init(struct VM* vm, char* filename) {
 	exec_func[STORE_NAME]  = exec_store_name;
 	exec_func[RETURN]      = exec_return;
 	exec_func[PRINT]       = exec_print;
+	exec_func[USE_FILE]    = exec_use_file;
 	exec_func[BTRUE]       = exec_btrue;
 	exec_func[BFALSE]      = exec_bfalse;
 	exec_func[JMP]         = exec_jmp;
@@ -740,18 +820,19 @@ void vm_init(struct VM* vm, char* filename) {
 	vmerror_vm = vm;
 }
 
-struct VM* vm_make(char* filename) {
+struct VM* vm_make(char* filepath, char* filename, struct GarbageCollector* gc) {
 	struct VM* vm = malloc(sizeof(struct VM));
-	vm_init(vm, filename);
+	vm_init(vm, filepath, filename, gc);
 	return vm;
 }
 
 void vm_free(struct VM* vm) {
 	free(vm->mainMem);
 	free(vm->globalEnv);
-	valuestack_free(vm->valueStack);	
+	valuestack_free(vm->valueStack);
 	valuestack_free(vm->callStack);
 	envstack_free(vm->envStack);
+	contextstack_free(vm->contextStack);
 	free(vm);
 }
 
@@ -785,6 +866,19 @@ void vm_disassemble(struct VM* vm) {
 		chunk_print(&vm->chunk);
 		chunk_free(&vm->chunk);
 	}
+}
+
+void vm_loadContext(struct VM* vm, struct Context* context) {
+	vm->mainMem = context->mainMem;
+	vm->mainMemSize = context->mainMemSize;
+	vm->valueStack = context->valueStack;
+	vm->callStack = context->callStack;
+	vm->envStack = context->envStack;
+	vm->globalEnv = context->globalEnv;
+	vm->pc = context->pc;
+	vm->halt = context->halt;
+	vm->chunk = context->chunk;
+	vm->lastCleaned = context->lastCleaned;
 }
 
 void vm_exec(struct VM* vm) {
