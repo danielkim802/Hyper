@@ -2,7 +2,6 @@
 environment is basically a hashmap from strings -> values). POP pops from the 
 value stack and PUSH pushes to the value stack. POP_ENV pops from the environment 
 stack and PUSH_ENV pushes to it.
-
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                                 *** Instructions for operating on literals *** │
 └────────────────────────────────────────────────────────────────────────────────┘
@@ -108,7 +107,7 @@ MUL                                                                 opcode[ 0x0B
 	type a = INT | FLOAT
 	type b = INT | FLOAT
 
-	*note: If both are INT, result will be INT. Otherwise,
+	*note: if both are INT, result will be INT. Otherwise,
 	result will be FLOAT.
 ──────────────────────────────────────────────────────────────────────────────────
 DIV                                                                 opcode[ 0x0C ]
@@ -119,7 +118,7 @@ DIV                                                                 opcode[ 0x0C
 	type a = INT | FLOAT
 	type b = INT | FLOAT
 
-	*note: If both are INT, result will be INT. Otherwise,
+	*note: if both are INT, result will be INT. Otherwise,
 	result will be FLOAT.
 ──────────────────────────────────────────────────────────────────────────────────
 PLUS                                                                opcode[ 0x0D ]
@@ -134,23 +133,33 @@ MINUS                                                               opcode[ 0x0E
 
 	type a = INT | FLOAT
 ──────────────────────────────────────────────────────────────────────────────────
-FUN_CALL                                                            opcode[ 0x0F ]
+FUN_CALL args return                                                opcode[ 0x0F ]
 	POP --> a
 	POP --> b1
 	POP --> b2
 	     |
 	     |
-	POP --> bn
-	a b1 b2 ... bn --> PUSH
+	POP --> b(args)
+	a b1 b2 ... b(args) --> PUSH
 
 	type a = FUN
-	type b1 ... bn = ANY
+	type b1 ... b(args) = ANY
 
-	*note: If there are not enough arguments, result will 
+	*note: if there are not enough arguments, result will 
 	be FUN (closure is created). Otherwise, result is the 
-	return value of the function call.
+	return value of the function call. If the function has
+	no arguments, it must be called with null. [args] is 
+	the number of arguments the function is being called 
+	with and [return] is the return address for the pc.
+	*note: [return] is the address relative to the current
+	file. During runtime, this address will possibly be 
+	shifted to allow importing other files. 
 ──────────────────────────────────────────────────────────────────────────────────
-GET_ATTR                                                            opcode[ 0x10 ]
+GET_ATTR attr                                                       opcode[ 0x10 ]
+	POP --> a
+	a.attr -> PUSH
+
+	type a = STRUCT
 ──────────────────────────────────────────────────────────────────────────────────
 ARR_IDX                                                             opcode[ 0x11 ]
 	POP --> a
@@ -159,65 +168,61 @@ ARR_IDX                                                             opcode[ 0x11
 
 	type a = INT
 	type b = ARR | STRING
-
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                           *** Instructions for loading and making literals *** │
 └────────────────────────────────────────────────────────────────────────────────┘
-LOAD_INT                                                            opcode[ 0x12 ]
-	a --> PUSH
-
-	type a = INT
+LOAD_INT i                                                          opcode[ 0x12 ]
+	i --> PUSH
 ──────────────────────────────────────────────────────────────────────────────────
-LOAD_FLOAT                                                          opcode[ 0x13 ]
-	a --> PUSH
-
-	type a = FLOAT
+LOAD_FLOAT f                                                        opcode[ 0x13 ]
+	f --> PUSH
 ──────────────────────────────────────────────────────────────────────────────────
-LOAD_NAME                                                           opcode[ 0x14 ]
-	a --> PUSH
+LOAD_NAME name                                                      opcode[ 0x14 ]
+	name --> PUSH
 
-	type a = ANY
-
-	*note: Looks in the environment stack starting from
+	*note: looks in the environment stack starting from
 	the topmost environment to dereference the name.
 ──────────────────────────────────────────────────────────────────────────────────
-LOAD_BOOL                                                           opcode[ 0x15 ]
-	a --> PUSH
+LOAD_BOOL bool                                                      opcode[ 0x15 ]
+	bool --> PUSH
 
-	type a = BOOL
+	*note: [bool] must be 1 or 0.
 ──────────────────────────────────────────────────────────────────────────────────
 LOAD_NULL                                                           opcode[ 0x16 ]
-	a --> PUSH
-
-	type a = NIL
+	null --> PUSH
 ──────────────────────────────────────────────────────────────────────────────────
-LOAD_STRING                                                         opcode[ 0x17 ]
-	a --> PUSH
+LOAD_STRING string                                                  opcode[ 0x17 ]
+	string --> PUSH
 
-	type a = STRING
+	*note: [string] must have 'quotations' around it (to 
+	differentiate from variable names).
 ──────────────────────────────────────────────────────────────────────────────────
-MAKE_FUN                                                            opcode[ 0x18 ]
-	a --> PUSH
+MAKE_FUN addr argc arg0 arg1 ...                                    opcode[ 0x18 ]
+	fun --> PUSH
 
-	type a = FUN
+	*note: [addr] is the byte address of the function and [argc] indicates 
+	the number of subsequent argument names [arg0], [arg1], ...
+	*note: [addr] is the address relative to the current
+	file. During runtime, this address will possibly be 
+	shifted to allow importing other files. 
 ──────────────────────────────────────────────────────────────────────────────────
 MAKE_STRUCT                                                         opcode[ 0x19 ]
-	a --> PUSH
+	struct --> PUSH
 
-	type a = STRUCT
+	*note: encapsulates the current environment in a struct and pushes
+	it to the value stack.
 ──────────────────────────────────────────────────────────────────────────────────
-MAKE_ARR                                                            opcode[ 0x1A ]
+MAKE_ARR len                                                        opcode[ 0x1A ]
 	POP --> a1
 	POP --> a2
 		|
 		|
-	POP --> an
-	[a1, a2, ..., an] -> PUSH
+	POP --> a(len)
+	[a1, a2, ..., a(len)] -> PUSH
 
 	type a1 ... an = ANY
 
-	*note: n is the length of the array.
-
+	*note: [len] is the length of the array.
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                                   *** Instructions for the virtual machine *** │
 └────────────────────────────────────────────────────────────────────────────────┘
@@ -226,42 +231,101 @@ PUSH_ENV                                                            opcode[ 0x1B
 ──────────────────────────────────────────────────────────────────────────────────
 POP_ENV                                                             opcode[ 0x1C ]
 	POP_ENV --> env
-
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                                  *** Instructions for executing statements *** │
 └────────────────────────────────────────────────────────────────────────────────┘
-ASSIGN_NAME                                                         opcode[ 0x1D ]
-──────────────────────────────────────────────────────────────────────────────────
-STORE_ARR                                                           opcode[ 0x1E ]
-	POP --> a
-	POP --> b
-	POP --> c
-	c[b] = a --> PUSH
+ASSIGN_NAME name                                                    opcode[ 0x1D ]
+	POP -> a
 
 	type a = ANY
-	type b = INT
-	type c = ARR
+
+	*note: [name] is the name of the variable to which the popped
+	value is assigned.
 ──────────────────────────────────────────────────────────────────────────────────
-STORE_ATTR                                                          opcode[ 0x1F ]
+STORE_ARR                                                           opcode[ 0x1E ]
+	POP --> val
+	POP --> idx
+	POP --> arr
+	arr[idx] = val
+
+	type val = ANY
+	type idx = INT
+	type arr = ARR
 ──────────────────────────────────────────────────────────────────────────────────
-STORE_NAME                                                          opcode[ 0x20 ]
+STORE_ATTR name                                                     opcode[ 0x1F ]
+	POP --> struct
+	POP --> value
+	struct.name = value
+
+	type struct = STRUCT
+	type value = ANY
+──────────────────────────────────────────────────────────────────────────────────
+STORE_NAME name                                                     opcode[ 0x20 ]
+	
+	*note: stores [name] in the current environment, initialized with 
+	the null value.
 ──────────────────────────────────────────────────────────────────────────────────
 RETURN                                                              opcode[ 0x21 ]
+	POP --> value
+	value --> PUSH
+
+	type value = ANY
+
+	*note: returns from a function and also handles changing the
+	environment and popping the function off the call stack after
+	which, the return value is pushed back to the value stack.
 ──────────────────────────────────────────────────────────────────────────────────
 PRINT                                                               opcode[ 0x22 ]
+	POP --> value
+	print value
 
+	type value = ANY
+──────────────────────────────────────────────────────────────────────────────────
+USE_FILE file name                                                  opcode[ 0x23 ]
+
+	*note: compiles [file] (relative to the current directory) and 
+	loads its global environment into a struct which is stored in 
+	the variable [name] in the environment in which the command is
+	called.
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                                          *** Instructions for control flow *** │
 └────────────────────────────────────────────────────────────────────────────────┘
-BTRUE                                                               opcode[ 0x23 ]
-──────────────────────────────────────────────────────────────────────────────────
-BFALSE                                                              opcode[ 0x24 ]
-──────────────────────────────────────────────────────────────────────────────────
-JMP                                                                 opcode[ 0x25 ]
-──────────────────────────────────────────────────────────────────────────────────
-HALT                                                                opcode[ 0x26 ]
+BTRUE addr                                                          opcode[ 0x24 ]
+	POP --> value
+	if value
+		pc = addr
 
+	type value = BOOL
+
+	*note: [addr] is the address relative to the current
+	file. During runtime, this address will possibly be 
+	shifted to allow importing other files. 
+──────────────────────────────────────────────────────────────────────────────────
+BFALSE addr                                                         opcode[ 0x25 ]
+	POP --> value
+	if not value
+		pc = addr
+
+	type value = BOOL
+
+	*note: [addr] is the address relative to the current
+	file. During runtime, this address will possibly be 
+	shifted to allow importing other files. 
+──────────────────────────────────────────────────────────────────────────────────
+JMP addr                                                            opcode[ 0x26 ]
+	pc = addr
+
+	*note: [addr] is the address relative to the current
+	file. During runtime, this address will possibly be 
+	shifted to allow importing other files. 
+──────────────────────────────────────────────────────────────────────────────────
+HALT                                                                opcode[ 0x27 ]
+	*note: sets the halt vm flag to true. 
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                       *** Additional instructions for the standard library *** │
 └────────────────────────────────────────────────────────────────────────────────┘
-LEN_ARR                                                             opcode[ 0x27 ]
+LEN_ARR                                                             opcode[ 0x28 ]
+	POP --> value
+	length(value) --> PUSH
+
+	type value = ARR | STRING

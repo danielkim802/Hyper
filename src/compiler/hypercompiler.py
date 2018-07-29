@@ -484,9 +484,9 @@ class Compiler(ASTTraverser):
 			return s[1:-1]
 
 		def boolean(b):
-			if b not in ['true', 'false']:
+			if b not in ['1', '0']:
 				raise ValueError
-			return chr(0) if b == 'true' else chr(1)
+			return chr(0) if b == '1' else chr(1)
 
 		if cmd == "and": self.write_cmd(AND, node.token)
 		elif cmd == "or": self.write_cmd(OR, node.token)
