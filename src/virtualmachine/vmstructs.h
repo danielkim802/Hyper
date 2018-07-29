@@ -77,8 +77,6 @@ struct Context {
 	uint64_t pc;
 	uint8_t halt;
 	struct Chunk chunk;
-
-	uint64_t lastCleaned;
 };
 
 struct ContextStack {

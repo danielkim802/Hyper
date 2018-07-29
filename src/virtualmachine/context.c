@@ -10,5 +10,4 @@ void context_init(struct Context* context, struct VM* vm) {
 	context->pc = vm->pc;
 	context->halt = vm->halt;
 	context->chunk = vm->chunk;
-	context->lastCleaned = vm->lastCleaned;
 }

@@ -730,11 +730,16 @@ void vm_init(struct VM* vm, char* filepath, char* filename, struct GarbageCollec
 	*vm->globalEnv = *envstack_peek(vm->envStack);
 	*vm->globalEnv->inUse = 1;
 	vm->gc = gc;
+	value_gc = gc;
 	vm->contextStack = contextstack_make();
 	vm->dir = (uint8_t*) filepath;
 
 	// setup dummy function in call stack for global environment
 	struct Value* dummy = value_make(FUN);
+	dummy->funValue = 0;
+	dummy->funArgc = 0;
+	dummy->funArgs = malloc(1);
+	dummy->funClosureStack = valuestack_make();
 	dummy->funEnvStack = vm->envStack;
 	valuestack_push(vm->callStack, dummy);
 
@@ -827,11 +832,19 @@ struct VM* vm_make(char* filepath, char* filename, struct GarbageCollector* gc) 
 }
 
 void vm_free(struct VM* vm) {
+	envstack_push(vm->envStack, 0);
+	*envstack_peek(vm->envStack)->inUse = 1;
+	valuestack_pop(vm->callStack);
+	while (vm->valueStack->size > 0)
+		valuestack_pop(vm->valueStack);
+
+	garbagecollector_clean(vm->gc, vm);
+
 	free(vm->mainMem);
-	free(vm->globalEnv);
+	*vm->globalEnv->inUse = 0;
+	env_free(vm->globalEnv);
 	valuestack_free(vm->valueStack);
 	valuestack_free(vm->callStack);
-	envstack_free(vm->envStack);
 	contextstack_free(vm->contextStack);
 	free(vm);
 }
@@ -878,7 +891,6 @@ void vm_loadContext(struct VM* vm, struct Context* context) {
 	vm->pc = context->pc;
 	vm->halt = context->halt;
 	vm->chunk = context->chunk;
-	vm->lastCleaned = context->lastCleaned;
 }
 
 void vm_exec(struct VM* vm) {
