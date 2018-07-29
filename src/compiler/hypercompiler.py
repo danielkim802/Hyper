@@ -100,7 +100,7 @@ class Compiler(ASTTraverser):
 		try:
 			text = open(filename, 'r').read()
 		except IOError:
-			print filename + " No such file"
+			print "[IOError]: '%s' No such file" % filename
 			sys.exit(0)
 		self.file = filename
 		self.parser = hyperparser.Parser(text)
@@ -559,40 +559,8 @@ class Compiler(ASTTraverser):
 		self.write_cmd(HALT, node.token)
 
 	def visit_Program(self, node):
-		ptrs = self.declare_std()
 		self.visit(node.content)
 		self.visit(node.eof)
-		self.write_std(ptrs)
-
-	def declare_std_len_arr(self):
-		self.write_cmd(MAKE_FUN)
-		std_len_arr_ptr = self.save(hyperparser.INT)
-		self.write_value(hyperparser.INT, 1)
-		self.write_value(hyperparser.STRING, "arr")
-		self.write_cmd(STORE_NAME)
-		self.write_value(hyperparser.STRING, "len")
-		self.write_cmd(ASSIGN_NAME)
-		self.write_value(hyperparser.STRING, "len")
-		return std_len_arr_ptr
-
-	def write_std_len_arr(self, ptr):
-		self.write_saved(ptr, hyperparser.INT, len(self.buffer))
-		self.write_cmd(PUSH_ENV)
-		self.write_cmd(LOAD_NAME)
-		self.write_value(hyperparser.STRING, "arr")
-		self.write_cmd(LEN_ARR)
-		self.write_cmd(RETURN)
-
-	def declare_std(self):
-		std_len_arr_ptr = self.declare_std_len_arr()
-		return [std_len_arr_ptr]
-
-	def write_std(self, ptrs):
-		std = [
-			self.write_std_len_arr
-		]
-		for i in range(len(ptrs)):
-			std[i](ptrs[i])
 
 	def compile(self):
 		ast = self.parser.parse()

@@ -67,8 +67,6 @@ struct GarbageCollector {
 };
 
 struct Context {
-	uint8_t* mainMem;
-	uint64_t mainMemSize;
 	struct ValueStack* valueStack;
 	struct ValueStack* callStack;
 	struct EnvStack* envStack;
@@ -99,6 +97,9 @@ struct VM {
 
 	// control fields
 	uint64_t pc;
+	uint64_t* offsetArr;
+	uint64_t offsetSize;
+	uint64_t offsetMax;
 	uint8_t halt;
 	struct Chunk chunk;
 	uint8_t* dir;

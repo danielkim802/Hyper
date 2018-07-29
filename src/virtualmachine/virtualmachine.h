@@ -17,6 +17,9 @@ void vm_disassemble(struct VM* vm);
 // loads a context into the vm
 void vm_loadContext(struct VM* vm, struct Context* context);
 
+// returns current pc offset
+uint64_t vm_pcOffset(struct VM* vm);
+
 // frees the vm
 void vm_free(struct VM* vm);
 

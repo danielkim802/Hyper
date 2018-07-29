@@ -10,6 +10,7 @@ all:
 debug:
 	$(V) $(MAKE) -C src/virtualmachine debug
 	$(V) cp bin/hyper hyper
+	$(V) rm -rf hyper.dSYM
 	$(V) cp -r bin/hyper.dSYM hyper.dSYM
 
 clean:

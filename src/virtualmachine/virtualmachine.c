@@ -488,7 +488,7 @@ void exec_load_string(struct VM* vm) {
 void exec_make_fun(struct VM* vm) {
 	// setup function
 	struct Value* value = value_make(FUN);
-	value->funValue = vm->chunk.uintArgs[0];
+	value->funValue = vm->chunk.uintArgs[0] + vm_pcOffset(vm);
 	value->funArgc = vm->chunk.uintArgs[1];
 	value->funArgs = vm->chunk.stringArgs;
 	value->funEnvStack = envstack_make();
@@ -629,6 +629,17 @@ void exec_use_file(struct VM* vm) {
 	// save context
 	contextstack_push(vm->contextStack, vm);
 
+	// add pc offset to array
+	if (vm->offsetSize == vm->offsetMax) {
+		uint64_t* newoffsets = malloc(sizeof(uint64_t) * vm->offsetMax * 2);
+		for (uint64_t i = 0; i < vm->offsetSize; i ++)
+			newoffsets[i] = vm->offsetArr[i];
+		free(vm->offsetArr);
+		vm->offsetArr = newoffsets;
+		vm->offsetMax *= 2;
+	}
+	vm->offsetArr[vm->offsetSize++] = vm->mainMemSize;
+
 	// setup stacks
 	vm->valueStack = valuestack_make();
 	vm->callStack = valuestack_make();
@@ -659,16 +670,20 @@ void exec_use_file(struct VM* vm) {
 	free(file);
 	free(filec);
 
-	// load main program memory and set pc
-	vm->mainMemSize = filesize;
-	vm->mainMem = malloc(sizeof(uint8_t) * filesize);
-	for (uint64_t i = 0; i < filesize; i ++)
+	// load main program memory
+	uint8_t* currmem = vm->mainMem;
+	vm->mainMem = malloc(sizeof(uint8_t) * (vm->mainMemSize + filesize));
+	for (uint64_t i = 0; i < vm->mainMemSize; i ++)
+		vm->mainMem[i] = currmem[i];
+	for (uint64_t i = vm->mainMemSize; i < vm->mainMemSize + filesize; i ++)
 		vm->mainMem[i] = fgetc(f);
 	fclose(f);
+	free(currmem);
 
 	// set flags
-	vm->pc = 0;
+	vm->pc = vm->mainMemSize;
 	vm->halt = 0;
+	vm->mainMemSize += filesize;
 
 	// run vm
 	vm_run(vm);
@@ -682,7 +697,6 @@ void exec_use_file(struct VM* vm) {
 	valuestack_pop(vm->callStack);
 	while (vm->valueStack->size > 0)
 		valuestack_pop(vm->valueStack);
-	free(vm->mainMem);
 	free(vm->globalEnv);
 	valuestack_free(vm->valueStack);
 	valuestack_free(vm->callStack);
@@ -705,24 +719,24 @@ void exec_btrue(struct VM* vm) {
 	struct Value* value = valuestack_pop(vm->valueStack);
 
 	if (value->type != BOOL)
-		vmerror_raise(TYPE_ERROR, "!!Unsupported operand type for [btrue]");
+		vmerror_raise(TYPE_ERROR, "Unsupported operand type for [btrue]");
 
 	if (value->boolValue)
-		vm->pc = vm->chunk.uintArg;
+		vm->pc = vm->chunk.uintArg + vm_pcOffset(vm);
 }
 
 void exec_bfalse(struct VM* vm) {
 	struct Value* value = valuestack_pop(vm->valueStack);
 
 	if (value->type != BOOL)
-		vmerror_raise(TYPE_ERROR, "!!Unsupported operand type for [bfalse]");
+		vmerror_raise(TYPE_ERROR, "Unsupported operand type for [bfalse]");
 
 	if (!value->boolValue)
-		vm->pc = vm->chunk.uintArg;
+		vm->pc = vm->chunk.uintArg + vm_pcOffset(vm);
 }
 
 void exec_jmp(struct VM* vm) {
-	vm->pc = vm->chunk.uintArg;
+	vm->pc = vm->chunk.uintArg + vm_pcOffset(vm);
 }
 
 void exec_halt(struct VM* vm) {
@@ -793,6 +807,10 @@ void vm_init(struct VM* vm, char* filepath, char* filename, struct GarbageCollec
 
 	// set flags and other parameters
 	vm->pc = 0;
+	vm->offsetArr = malloc(sizeof(uint64_t));
+	vm->offsetArr[0] = 0;
+	vm->offsetSize = 1;
+	vm->offsetMax = 1;
 	vm->halt = 0;
 	vm->lastCleaned = 0;
 	vm->debug = VM_DEBUG;
@@ -859,7 +877,6 @@ struct VM* vm_make(char* filepath, char* filename, struct GarbageCollector* gc) 
 void vm_free(struct VM* vm) {
 	while(vm->envStack->size > 1)
 		envstack_pop(vm->envStack);
-
 	envstack_push(vm->envStack, 0);
 	*envstack_peek(vm->envStack)->inUse = 1;
 	valuestack_pop(vm->callStack);
@@ -874,6 +891,7 @@ void vm_free(struct VM* vm) {
 	valuestack_free(vm->valueStack);
 	valuestack_free(vm->callStack);
 	contextstack_free(vm->contextStack);
+	free(vm->offsetArr);
 	free(vm);
 }
 
@@ -910,8 +928,6 @@ void vm_disassemble(struct VM* vm) {
 }
 
 void vm_loadContext(struct VM* vm, struct Context* context) {
-	vm->mainMem = context->mainMem;
-	vm->mainMemSize = context->mainMemSize;
 	vm->valueStack = context->valueStack;
 	vm->callStack = context->callStack;
 	vm->envStack = context->envStack;
@@ -921,12 +937,19 @@ void vm_loadContext(struct VM* vm, struct Context* context) {
 	vm->chunk = context->chunk;
 }
 
+uint64_t vm_pcOffset(struct VM* vm) {
+	for (uint64_t i = 1; i < vm->offsetSize; i ++)
+		if (vm->offsetArr[i - 1] <= vm->pc && vm->offsetArr[i] > vm->pc)
+			return vm->offsetArr[i - 1];
+	return vm->offsetArr[vm->offsetSize - 1];
+}
+
 void vm_exec(struct VM* vm) {
 	if (vm->pc >= vm->mainMemSize)
 		vmerror_raise(RUNTIME_ERROR, "Program counter out of bounds");
 
 	if (vm->debug)
-		printf("[%5llu] ", vm->pc);
+		printf("[+%5llu] [%5llu] ", vm_pcOffset(vm), vm->pc);
 
 	vm->pc += chunk_get(&vm->chunk, &vm->mainMem[vm->pc]);
 	
