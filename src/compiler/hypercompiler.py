@@ -108,6 +108,10 @@ class Compiler(ASTTraverser):
 		self.line = 1
 		self.warnings = ""
 
+	def error(self, token, msg):
+		print "line %i [SyntaxError]: '%s' %s" % (token.line, str(token.value), msg)
+		sys.exit(0)
+
 	def warning(self, msg):
 		self.warnings += "line %i [Warning]: " % self.line + msg + '\n'
 
@@ -438,6 +442,118 @@ class Compiler(ASTTraverser):
 		self.write_cmd(USE_FILE)
 		self.write_value(hyperparser.STRING, node.file)
 		self.write_value(hyperparser.STRING, node.name)
+
+	def visit_ASM(self, node):
+		args = []
+		pos = 0
+		curr = ''
+		instring = False
+		while pos < len(node.string):
+			while pos < len(node.string) and node.string[pos].isspace():
+				pos += 1
+			while pos < len(node.string) and (not node.string[pos].isspace() or instring):
+				if node.string[pos] == "'":
+					instring = not instring
+				curr += node.string[pos]
+				pos += 1
+			if curr:
+				args += [curr]
+				curr = ''
+		if instring:
+			self.error(node.token, "Invalid asm string argument")
+
+		if not args:
+			self.error(node.token, "Invalid asm statement")
+
+		cmd = args[0].lower()
+		args = args[1:]
+		types = []
+		cond = lambda args: True
+
+		def name(string):
+			for i in string:
+				if i != '_' and not i.isalnum():
+					raise ValueError
+			return string
+
+		def string(s):
+			if len(s) < 2:
+				raise ValueError
+			if not (s[0] == s[-1] == "'"):
+				raise ValueError
+			return s[1:-1]
+
+		def boolean(b):
+			if b not in ['true', 'false']:
+				raise ValueError
+			return chr(0) if b == 'true' else chr(1)
+
+		if cmd == "and": self.write_cmd(AND, node.token)
+		elif cmd == "or": self.write_cmd(OR, node.token)
+		elif cmd == "not": self.write_cmd(NOT, node.token)
+		elif cmd == "lt": self.write_cmd(LT, node.token)
+		elif cmd == "lte": self.write_cmd(LTE, node.token)
+		elif cmd == "gt": self.write_cmd(GT, node.token)
+		elif cmd == "gte": self.write_cmd(GTE, node.token)
+		elif cmd == "ne": self.write_cmd(NE, node.token)
+		elif cmd == "eq": self.write_cmd(EQ, node.token)
+		elif cmd == "add": self.write_cmd(ADD, node.token)
+		elif cmd == "sub": self.write_cmd(SUB, node.token)
+		elif cmd == "mul": self.write_cmd(MUL, node.token)
+		elif cmd == "div": self.write_cmd(DIV, node.token)
+		elif cmd == "plus": self.write_cmd(PLUS, node.token)
+		elif cmd == "minus": self.write_cmd(MINUS, node.token)
+		elif cmd == "fun_call": self.write_cmd(FUN_CALL, node.token); types = [int, int]
+		elif cmd == "get_attr": self.write_cmd(GET_ATTR, node.token); types = [name]
+		elif cmd == "arr_idx": self.write_cmd(ARR_IDX, node.token)
+		elif cmd == "load_int": self.write_cmd(LOAD_INT, node.token); types = [int]
+		elif cmd == "load_float": self.write_cmd(LOAD_FLOAT, node.token); types = [float]
+		elif cmd == "load_name": self.write_cmd(LOAD_NAME, node.token); types = [name]
+		elif cmd == "load_bool": self.write_cmd(LOAD_BOOL, node.token); types = [boolean]
+		elif cmd == "load_null": self.write_cmd(LOAD_NULL, node.token)
+		elif cmd == "load_string": self.write_cmd(LOAD_STRING, node.token); types = [string]
+		elif cmd == "make_fun": self.write_cmd(MAKE_FUN, node.token); types = [int, int] + [name] * (len(args) - 2); \
+			cond = lambda args: args[1] == len(args) - 2
+		elif cmd == "make_struct": self.write_cmd(MAKE_STRUCT, node.token)
+		elif cmd == "make_arr": self.write_cmd(MAKE_ARR, node.token); types = [int]
+		elif cmd == "push_env": self.write_cmd(PUSH_ENV, node.token)
+		elif cmd == "pop_env": self.write_cmd(POP_ENV, node.token)
+		elif cmd == "assign_name": self.write_cmd(ASSIGN_NAME, node.token); types = [name]
+		elif cmd == "store_arr": self.write_cmd(STORE_ARR, node.token)
+		elif cmd == "store_attr": self.write_cmd(STORE_ATTR, node.token); types = [name]
+		elif cmd == "store_name": self.write_cmd(STORE_NAME, node.token); types = [name]
+		elif cmd == "return": self.write_cmd(RETURN, node.token)
+		elif cmd == "print": self.write_cmd(PRINT, node.token)
+		elif cmd == "use_file": self.write_cmd(USE_FILE, node.token); types = [string]
+		elif cmd == "btrue": self.write_cmd(BTRUE, node.token); types = [int]
+		elif cmd == "bfalse": self.write_cmd(BFALSE, node.token); types = [int]
+		elif cmd == "jmp": self.write_cmd(JMP, node.token); types = [int]
+		elif cmd == "halt": self.write_cmd(HALT, node.token)
+		elif cmd == "len_arr": self.write_cmd(LEN_ARR, node.token)
+		else: 
+			self.error(node.token, "Invalid command")
+
+		if len(args) != len(types):
+			self.error(node.token, "Invalid number of arguments")
+
+		for i in range(len(args)):
+			try:
+				args[i] = types[i](args[i])
+			except ValueError:
+				self.error(node.token, "Invalid argument types")
+
+		if not cond(args):
+			self.error(node.token, "Invalid arguments")
+
+		for i in range(len(args)):
+			if types[i] == int:
+				self.write_value(hyperparser.INT, args[i])
+			if types[i] == float:
+				self.write_value(hyperparser.FLOAT, args[i])
+			if types[i] in [string, name]:
+				self.write_value(hyperparser.STRING, args[i])
+			if types[i] == boolean:
+				self.write_value(hyperparser.BOOL, args[i])
 
 	def visit_EOF(self, node):
 		self.write_cmd(HALT, node.token)

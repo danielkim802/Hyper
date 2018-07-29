@@ -743,7 +743,7 @@ void exec_len_arr(struct VM* vm) {
 	valuestack_push(vm->valueStack, res);
 }
 
-void (*exec_func[0x29]) (struct VM* vm);
+void (*exec_func[NUM_CMDS]) (struct VM* vm);
 
 void vm_init(struct VM* vm, char* filepath, char* filename, struct GarbageCollector* gc) {
 	// setup stacks
@@ -857,6 +857,9 @@ struct VM* vm_make(char* filepath, char* filename, struct GarbageCollector* gc) 
 }
 
 void vm_free(struct VM* vm) {
+	while(vm->envStack->size > 1)
+		envstack_pop(vm->envStack);
+
 	envstack_push(vm->envStack, 0);
 	*envstack_peek(vm->envStack)->inUse = 1;
 	valuestack_pop(vm->callStack);
@@ -919,6 +922,9 @@ void vm_loadContext(struct VM* vm, struct Context* context) {
 }
 
 void vm_exec(struct VM* vm) {
+	if (vm->pc >= vm->mainMemSize)
+		vmerror_raise(RUNTIME_ERROR, "Program counter out of bounds");
+
 	if (vm->debug)
 		printf("[%5llu] ", vm->pc);
 
@@ -927,6 +933,9 @@ void vm_exec(struct VM* vm) {
 	if (vm->debug)
 		chunk_print(&vm->chunk);
 	
+	if (vm->chunk.opcode >= NUM_CMDS)
+		vmerror_raise(RUNTIME_ERROR, "Invalid command");
+
 	(*exec_func[vm->chunk.opcode])(vm);
 	
 	if (vm->debugValueStack)

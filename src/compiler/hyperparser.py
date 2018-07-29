@@ -62,6 +62,9 @@ OR       = 'OR'
 RETURN   = 'RETURN'
 PRINT    = 'PRINT'
 
+# inline assembly
+ASM      = 'ASM'
+
 keywords = {
 	"if"      : IF,
 	"elif"    : ELIF,
@@ -213,6 +216,13 @@ class Lexer(object):
 		self.get()
 		return Token(STRING, res, self.line)
 
+	def get_asm(self):
+		self.get()
+		res = ""
+		while not self.eof() and self.char != '\n':
+			res += self.get()
+		return Token(ASM, res, self.line)
+
 	def get_token(self):
 		if self.char == ';':
 			while not self.eof() and self.char != '\n':
@@ -271,6 +281,8 @@ class Lexer(object):
 			return Token(COMMA, ',', self.line)
 		if self.char == '\'':
 			return self.get_string()
+		if self.char == '$':
+			return self.get_asm()
 
 		self.error(self.char, "Invalid syntax")
 
@@ -448,6 +460,11 @@ class AST_Use(AST):
 		self.token = token
 		self.file = file
 		self.name = name
+
+class AST_ASM(AST):
+	def __init__(self, token):
+		self.token = token
+		self.string = token.value
 
 class AST_Statement(AST):
 	def __init__(self, stmt):
@@ -935,7 +952,14 @@ class Parser(object):
 		self.eat(NAME)
 		return AST_Use(token, file, name)
 
-	# statement : expr | assign_stmt | if_stmt | return_stmt | while_stmt | for_stmt | print_stmt | declaration_stmt | use_stmt
+	# asm_stmt : ASM
+	def asm_stmt(self):
+		token = self.token
+		self.eat(ASM)
+		return AST_ASM(token)
+
+	# statement : expr | assign_stmt | if_stmt | return_stmt | while_stmt 
+	#           | for_stmt | print_stmt | declaration_stmt | use_stmt | asm_stmt
 	def statement(self):
 		if self.token.type == IF:
 			return self.if_stmt()
@@ -951,6 +975,8 @@ class Parser(object):
 			return self.declaration_stmt()
 		if self.token.type == USE:
 			return self.use_stmt()
+		if self.token.type == ASM:
+			return self.asm_stmt()
 		return self.assign_stmt()
 
 	# compound_stmt : ((statement | [SPACE]) NEWLINE)* [statement | SPACE]
