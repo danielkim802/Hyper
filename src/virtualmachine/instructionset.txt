@@ -1,7 +1,21 @@
 ** Instructions operate on a stack of values and a stack of environments (an 
 environment is basically a hashmap from strings -> values). POP pops from the 
 value stack and PUSH pushes to the value stack. POP_ENV pops from the environment 
-stack and PUSH_ENV pushes to it.
+stack and PUSH_ENV pushes to it. Opcodes are stored as follows:
+
+| 1 byte | 8 bytes | see below | see below | ...
+| opcode | line #  |    arg0   |    arg 1  | ...
+
+args can be one of INT, FLOAT, STRING, BOOL and sizes are given below:
+INT    : 8 bytes
+FLOAT  : 8 bytes
+STRING : len of string bytes + 1 (for null terminator)
+NAME   : len of string bytes + 1 (for null terminator)
+BOOL   : 1 byte
+
+*note: STRINGs are indistinguishable from NAMEs when stored in byte code but
+STRINGs must use quotes if using inline assembly. BOOLs can only be 1 or 0.
+
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                                 *** Instructions for operating on literals *** │
 └────────────────────────────────────────────────────────────────────────────────┘
@@ -134,6 +148,9 @@ MINUS                                                               opcode[ 0x0E
 	type a = INT | FLOAT
 ──────────────────────────────────────────────────────────────────────────────────
 FUN_CALL args return                                                opcode[ 0x0F ]
+	args   : INT
+	return : INT
+	
 	POP --> a
 	POP --> b1
 	POP --> b2
@@ -156,6 +173,8 @@ FUN_CALL args return                                                opcode[ 0x0F
 	shifted to allow importing other files. 
 ──────────────────────────────────────────────────────────────────────────────────
 GET_ATTR attr                                                       opcode[ 0x10 ]
+	attr : NAME
+
 	POP --> a
 	a.attr -> PUSH
 
@@ -172,18 +191,26 @@ ARR_IDX                                                             opcode[ 0x11
 │                           *** Instructions for loading and making literals *** │
 └────────────────────────────────────────────────────────────────────────────────┘
 LOAD_INT i                                                          opcode[ 0x12 ]
+	i : INT
+
 	i --> PUSH
 ──────────────────────────────────────────────────────────────────────────────────
 LOAD_FLOAT f                                                        opcode[ 0x13 ]
+	f : FLOAT
+
 	f --> PUSH
 ──────────────────────────────────────────────────────────────────────────────────
 LOAD_NAME name                                                      opcode[ 0x14 ]
+	name : NAME
+
 	name --> PUSH
 
 	*note: looks in the environment stack starting from
 	the topmost environment to dereference the name.
 ──────────────────────────────────────────────────────────────────────────────────
 LOAD_BOOL bool                                                      opcode[ 0x15 ]
+	bool : BOOL
+
 	bool --> PUSH
 
 	*note: [bool] must be 1 or 0.
@@ -192,12 +219,21 @@ LOAD_NULL                                                           opcode[ 0x16
 	null --> PUSH
 ──────────────────────────────────────────────────────────────────────────────────
 LOAD_STRING string                                                  opcode[ 0x17 ]
+	string : STRING
+
 	string --> PUSH
 
 	*note: [string] must have 'quotations' around it (to 
 	differentiate from variable names).
 ──────────────────────────────────────────────────────────────────────────────────
 MAKE_FUN addr argc arg0 arg1 ...                                    opcode[ 0x18 ]
+	addr : INT
+	argc : INT
+	arg0 : NAME
+	arg1 : NAME
+	     |
+	argn : NAME
+
 	fun --> PUSH
 
 	*note: [addr] is the byte address of the function and [argc] indicates 
@@ -213,6 +249,8 @@ MAKE_STRUCT                                                         opcode[ 0x19
 	it to the value stack.
 ──────────────────────────────────────────────────────────────────────────────────
 MAKE_ARR len                                                        opcode[ 0x1A ]
+	len : INT
+
 	POP --> a1
 	POP --> a2
 		|
@@ -235,6 +273,8 @@ POP_ENV                                                             opcode[ 0x1C
 │                                  *** Instructions for executing statements *** │
 └────────────────────────────────────────────────────────────────────────────────┘
 ASSIGN_NAME name                                                    opcode[ 0x1D ]
+	name : NAME
+
 	POP -> a
 
 	type a = ANY
@@ -253,6 +293,8 @@ STORE_ARR                                                           opcode[ 0x1E
 	type arr = ARR
 ──────────────────────────────────────────────────────────────────────────────────
 STORE_ATTR name                                                     opcode[ 0x1F ]
+	name : NAME
+
 	POP --> struct
 	POP --> value
 	struct.name = value
@@ -261,6 +303,7 @@ STORE_ATTR name                                                     opcode[ 0x1F
 	type value = ANY
 ──────────────────────────────────────────────────────────────────────────────────
 STORE_NAME name                                                     opcode[ 0x20 ]
+	name : NAME
 	
 	*note: stores [name] in the current environment, initialized with 
 	the null value.
@@ -282,6 +325,8 @@ PRINT                                                               opcode[ 0x22
 	type value = ANY
 ──────────────────────────────────────────────────────────────────────────────────
 USE_FILE file name                                                  opcode[ 0x23 ]
+	file : STRING
+	name : NAME
 
 	*note: compiles [file] (relative to the current directory) and 
 	loads its global environment into a struct which is stored in 
@@ -291,6 +336,8 @@ USE_FILE file name                                                  opcode[ 0x23
 │                                          *** Instructions for control flow *** │
 └────────────────────────────────────────────────────────────────────────────────┘
 BTRUE addr                                                          opcode[ 0x24 ]
+	addr : INT
+
 	POP --> value
 	if value
 		pc = addr
@@ -302,6 +349,8 @@ BTRUE addr                                                          opcode[ 0x24
 	shifted to allow importing other files. 
 ──────────────────────────────────────────────────────────────────────────────────
 BFALSE addr                                                         opcode[ 0x25 ]
+	addr : INT
+
 	POP --> value
 	if not value
 		pc = addr
@@ -313,6 +362,8 @@ BFALSE addr                                                         opcode[ 0x25
 	shifted to allow importing other files. 
 ──────────────────────────────────────────────────────────────────────────────────
 JMP addr                                                            opcode[ 0x26 ]
+	addr : INT
+	
 	pc = addr
 
 	*note: [addr] is the address relative to the current
