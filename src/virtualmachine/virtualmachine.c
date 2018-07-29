@@ -382,7 +382,7 @@ void exec_fun_call(struct VM* vm) {
 	}
 
 	// push to call stack and assign return address
-	fun->funReturn = returnAddr;
+	fun->funReturn = returnAddr + vm_pcOffset(vm);
 	valuestack_push(vm->callStack, fun);
 
 	// set pc to function location and set current environment stack

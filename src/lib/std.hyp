@@ -1,0 +1,11 @@
+var len = fun arr {
+	$ load_name arr
+	$ len_arr
+	$ return
+}
+
+var map = fun f arr {
+	var res = []
+	for i to len arr { res += [f arr[i]] }
+	return res
+}

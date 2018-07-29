@@ -1,4 +1,10 @@
-use '../std.hyp' as std
+var std = struct {
+	var len = fun arr {
+		$ load_name arr
+		$ len_arr
+		$ return
+	}
+}
 
 ; brainfuck interpreter
 var brainfuck = struct {
