@@ -524,7 +524,7 @@ class Compiler(ASTTraverser):
 		elif cmd == "store_name": self.write_cmd(STORE_NAME, node.token); types = [name]
 		elif cmd == "return": self.write_cmd(RETURN, node.token)
 		elif cmd == "print": self.write_cmd(PRINT, node.token)
-		elif cmd == "use_file": self.write_cmd(USE_FILE, node.token); types = [string]
+		elif cmd == "use_file": self.write_cmd(USE_FILE, node.token); types = [string, name]
 		elif cmd == "btrue": self.write_cmd(BTRUE, node.token); types = [int]
 		elif cmd == "bfalse": self.write_cmd(BFALSE, node.token); types = [int]
 		elif cmd == "jmp": self.write_cmd(JMP, node.token); types = [int]

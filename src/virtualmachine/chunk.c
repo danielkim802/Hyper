@@ -292,7 +292,7 @@ void chunk_print(struct Chunk* chunk) {
 		case STORE_NAME: printf("STORE_NAME %s", chunk->stringArg); break;
 		case RETURN: printf("RETURN"); break;
 		case PRINT: printf("PRINT"); break;
-		case USE_FILE: printf("USE_FILE %s %s", chunk->stringArgs[0], chunk->stringArgs[1]); break;
+		case USE_FILE: printf("USE_FILE '%s' %s", chunk->stringArgs[0], chunk->stringArgs[1]); break;
 
 		// control
 		case BTRUE: printf("BTRUE %llu", chunk->uintArg); break;
