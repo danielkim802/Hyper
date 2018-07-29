@@ -675,6 +675,9 @@ class Disassembler(object):
 	def read_print(self):
 		pass
 
+	def read_use_file(self):
+		self.text += self.get_string() + " " + self.get_string()
+
 	# control
 	def read_btrue(self):
 		self.text += str(self.get_int())

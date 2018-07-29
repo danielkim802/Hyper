@@ -54,6 +54,8 @@ void envstack_pushEnv(struct EnvStack* es, struct Env* env) {
 }
 
 uint64_t envstack_pop(struct EnvStack* es) {
+	if (es->size == 0)
+		vmerror_raise(MEMORY_ERROR, "Environment stack empty");
 	uint64_t pos = es->envs[es->size - 1].stackPos;
 	env_freeContent(&es->envs[--es->size]);
 	return pos;

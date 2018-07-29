@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "vmerror.h"
 #include "valuestack.h"
 #include "value.h"
 
@@ -26,10 +27,14 @@ void valuestack_push(struct ValueStack* vs, struct Value* value) {
 }
 
 struct Value* valuestack_pop(struct ValueStack* vs) {
+	if (vs->size == 0)
+		vmerror_raise(RUNTIME_ERROR, "Value stack empty");
 	return vs->values[--vs->size];
 }
 
 struct Value* valuestack_peek(struct ValueStack* vs) {
+	if (vs->size == 0)
+		vmerror_raise(RUNTIME_ERROR, "Value stack empty");
 	return vs->values[vs->size - 1];
 }
 
