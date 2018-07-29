@@ -757,6 +757,19 @@ void exec_len_arr(struct VM* vm) {
 	valuestack_push(vm->valueStack, res);
 }
 
+void exec_input(struct VM* vm) {
+	struct Value* value = valuestack_pop(vm->valueStack);
+
+	if (value->type != STRING)
+		vmerror_raise(TYPE_ERROR, "Input prompt must be a string");
+
+	printf("%s", value->stringValue);
+	struct Value* string = value_make(STRING);
+	string->stringValue = malloc(sizeof(uint8_t) * 100); // TODO: dynamic size
+	scanf("%[0-9a-zA-Z ]", string->stringValue);
+	valuestack_push(vm->valueStack, string);
+}
+
 void (*exec_func[NUM_CMDS]) (struct VM* vm);
 
 void vm_init(struct VM* vm, char* filepath, char* filename, struct GarbageCollector* gc) {
@@ -863,6 +876,7 @@ void vm_init(struct VM* vm, char* filepath, char* filename, struct GarbageCollec
 	exec_func[JMP]         = exec_jmp;
 	exec_func[HALT]        = exec_halt;
 	exec_func[LEN_ARR]     = exec_len_arr;
+	exec_func[INPUT]       = exec_input;
 
 	// setup error
 	vmerror_vm = vm;

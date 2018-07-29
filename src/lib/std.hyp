@@ -9,3 +9,9 @@ var map = fun f arr {
 	for i to len arr { res += [f arr[i]] }
 	return res
 }
+
+var input = fun prompt {
+	$ load_name prompt
+	$ input
+	$ return
+}

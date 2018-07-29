@@ -329,3 +329,13 @@ LEN_ARR                                                             opcode[ 0x28
 	length(value) --> PUSH
 
 	type value = ARR | STRING
+──────────────────────────────────────────────────────────────────────────────────
+INPUT                                                               opcode[ 0x29 ]
+	POP --> prompt
+	print prompt
+	input --> PUSH
+
+	type prompt = STRING
+
+	*note: reads in user input as a string and pushes it to the stack. Prints
+	popped string as a prompt before requesting user input.

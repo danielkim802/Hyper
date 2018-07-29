@@ -55,6 +55,7 @@ HALT        = 0x27
 
 # library functions
 LEN_ARR     = 0x28
+INPUT       = 0x29
 
 opcodes = {
 	# expressions
@@ -83,7 +84,7 @@ opcodes = {
 	JMP         : "jmp",         HALT        : "halt",
 
 	# library functions
-	LEN_ARR     : "len_arr"
+	LEN_ARR     : "len_arr",     INPUT       : "input"
 }
 
 class ASTTraverser(object):
@@ -530,6 +531,7 @@ class Compiler(ASTTraverser):
 		elif cmd == "jmp": self.write_cmd(JMP, node.token); types = [int]
 		elif cmd == "halt": self.write_cmd(HALT, node.token)
 		elif cmd == "len_arr": self.write_cmd(LEN_ARR, node.token)
+		elif cmd == "input": self.write_cmd(INPUT, node.token)
 		else: 
 			self.error(node.token, "Invalid command")
 
@@ -777,6 +779,9 @@ class Disassembler(object):
 
 	# library functions
 	def read_len_arr(self):
+		pass
+
+	def read_input(self):
 		pass
 
 	def disassemble(self):

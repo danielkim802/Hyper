@@ -156,6 +156,8 @@ uint64_t chunk_get(struct Chunk* chunk, uint8_t* mem) {
 
 		// library functions
 		case LEN_ARR: break;
+		case INPUT:
+			break;
 	}
 
 	return ptr;
@@ -238,6 +240,8 @@ void chunk_free(struct Chunk* chunk) {
 
 		// library functions
 		case LEN_ARR: break;
+		case INPUT:
+			break;
 	}
 }
 
@@ -302,6 +306,7 @@ void chunk_print(struct Chunk* chunk) {
 
 		// library functions
 		case LEN_ARR: printf("LEN_ARR"); break;
+		case INPUT: printf("INPUT"); break;
 
 		default: printf("!!UNKNOWN_FUNC %u", chunk->opcode); break;
 	}

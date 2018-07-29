@@ -55,7 +55,8 @@ static const uint8_t HALT        = 0x27;
 
 // library functions
 static const uint8_t LEN_ARR     = 0x28;
+static const uint8_t INPUT       = 0x29;
 
-static const uint8_t NUM_CMDS    = 0x29;
+static const uint8_t NUM_CMDS    = 0x2A;
 
 #endif /* OPCODE_H */
