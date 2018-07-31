@@ -17,5 +17,5 @@ var input = fun prompt {
 }
 
 var exit = fun {
-	$exit
+	$ exit
 }

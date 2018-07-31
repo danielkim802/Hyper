@@ -1,0 +1,83 @@
+; this is a comment
+
+; hello world
+print 'Hello, world!'
+
+; variable declaration
+var variable
+var variable2 = 20
+
+; assignment
+variable = 10
+
+; basic types
+10
+5.5
+'string'
+[10, 5.5, 'string']
+true
+false
+null
+
+; expression
+10 + 3.3 < 5 * 8 or 'string' == null
+
+; array indexing
+var arr = [1, 2, 3]
+arr[0] = 20
+
+; functions
+fun a b { return a + b }
+var func0 = fun x y { return x * y }
+
+; function call
+func0 10 20
+
+; pipeline operator
+20 \ func0 10 \ func0 30
+
+; structs
+var point = struct {
+	var x = 0
+	var y = 0
+}
+point.x = 20
+point.y = 30
+
+; if statement
+if false {
+	print 'got in if'
+} elif false {
+	print 'got in elif'
+} elif false {
+	print 'got in elif'
+} else {
+	print 'got in else'
+}
+
+; for loop
+var count = 0
+for i to 10 {
+	count += 1
+}
+
+; while loop
+while count > 0 {
+	count -= 1
+}
+
+; import file
+use '../src/lib/std.hyp' as std
+std.len [1, 2, 3]
+
+; assembly
+$ store_name string
+$ load_string 'k'
+$ assign_name string
+for i to 20 {
+	$ load_string 'o'
+	$ load_name string
+	$ add
+	$ assign_name string
+}
+print string

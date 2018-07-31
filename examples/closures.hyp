@@ -1,7 +1,9 @@
+use '../src/lib/std.hyp' as std
+
 print 'incrementer with map'
 var map = fun f arr {
 	var res = []
-	for i to len arr {res += [f arr[i]]}
+	for i to std.len arr {res += [f arr[i]]}
 	return res
 }
 var incr = fun a {return a + 1}
