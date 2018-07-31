@@ -143,6 +143,20 @@ uint64_t chunk_get(struct Chunk* chunk, uint8_t* mem) {
 			break;
 
 		// control
+		case FOR_SETUP_TO: 
+			ptr += read_string(chunk, &mem[ptr]);
+			break;
+		case FOR_SETUP_IN: 
+			ptr += read_string(chunk, &mem[ptr]);
+			break;
+		case FOR_LOOP:
+			ptr += read_string(chunk, &mem[ptr]);
+			ptr += read_uint(chunk, &mem[ptr]);
+			break;
+		case FOR_UPDATE:
+			ptr += read_string(chunk, &mem[ptr]);
+			ptr += read_uint(chunk, &mem[ptr]);
+			break;
 		case BTRUE:
 			ptr += read_uint(chunk, &mem[ptr]);
 			break;
@@ -233,6 +247,18 @@ void chunk_free(struct Chunk* chunk) {
 			break;
 
 		// control
+		case FOR_SETUP_TO: 
+			free(chunk->stringArg);
+			break;
+		case FOR_SETUP_IN: 
+			free(chunk->stringArg);
+			break;
+		case FOR_LOOP: 
+			free(chunk->stringArg);
+			break;
+		case FOR_UPDATE:
+			free(chunk->stringArg);
+			break;
 		case BTRUE: break;
 		case BFALSE: break;
 		case JMP: break;
@@ -240,8 +266,7 @@ void chunk_free(struct Chunk* chunk) {
 
 		// library functions
 		case LEN_ARR: break;
-		case INPUT:
-			break;
+		case INPUT: break;
 	}
 }
 
@@ -299,6 +324,10 @@ void chunk_print(struct Chunk* chunk) {
 		case USE_FILE: printf("USE_FILE '%s' %s", chunk->stringArgs[0], chunk->stringArgs[1]); break;
 
 		// control
+		case FOR_SETUP_TO: printf("FOR_SETUP_TO %s", chunk->stringArg); break;
+		case FOR_SETUP_IN: printf("FOR_SETUP_IN %s", chunk->stringArg); break;
+		case FOR_LOOP: printf("FOR_LOOP %s %llu",chunk->stringArg, chunk->uintArg); break;
+		case FOR_UPDATE: printf("FOR_UPDATE %s %llu", chunk->stringArg, chunk->uintArg); break;
 		case BTRUE: printf("BTRUE %llu", chunk->uintArg); break;
 		case BFALSE: printf("BFALSE %llu", chunk->uintArg); break;
 		case JMP: printf("JMP %llu", chunk->uintArg); break;

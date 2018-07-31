@@ -53,6 +53,7 @@ ELIF     = 'ELIF'
 ELSE     = 'ELSE'
 FOR      = 'FOR'
 TO       = 'TO'
+IN       = 'IN'
 WHILE    = 'WHILE'
 FUNDEF   = 'FUNDEF'
 STRUCTDEF= 'STRUCTDEF'
@@ -71,6 +72,7 @@ keywords = {
 	"else"    : ELSE,
 	"for"     : FOR,
 	"to"      : TO,
+	"in"      : IN,
 	"while"   : WHILE,
 	"fun"     : FUNDEF,
 	"struct"  : STRUCTDEF,
@@ -406,10 +408,12 @@ class AST_While(AST):
 		self.content = content
 
 class AST_For(AST):
-	def __init__(self, token, var, expr, content):
+	def __init__(self, token, token2, var, expr, expr2, content):
 		self.token = token
+		self.token2 = token2
 		self.var = var
 		self.expr = expr
+		self.expr2 = expr2
 		self.content = content
 
 class AST_FunDef(AST):
@@ -890,7 +894,7 @@ class Parser(object):
 	# return_stmt : RETURN [expr]
 	def return_stmt(self):
 		if self.in_fun == 0:
-			self.error(self.token, "outside of function");
+			self.error(self.token, "Outside of function");
 		token = self.token
 		self.eat(RETURN)
 		self.eat_space()
@@ -911,22 +915,38 @@ class Parser(object):
 		self.eat_space()
 		return AST_While(token, condition, content)
 
-	# for_stmt : FOR SPACE NAME SPACE TO expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE [SPACE]
+	# for_stmt : FOR SPACE NAME [SPACE] ASSIGN [SPACE] expr TO expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
+    #          | FOR SPACE NAME [SPACE] IN [SPACE] expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
 	def for_stmt(self):
 		token = self.token
 		self.eat(FOR)
 		self.eat(SPACE)
 		var = AST_Name(self.token)
 		self.eat(NAME)
-		self.eat(SPACE)
-		self.eat(TO)
-		expr = self.expr()
+		self.eat_space()
+
+		if self.token.type == ASSIGN:
+			self.eat(ASSIGN)
+			self.eat_space()
+			expr = self.expr()
+			token2 = self.token
+			self.eat(TO)
+			expr2 = self.expr()
+		elif self.token.type == IN:
+			token2 = self.token
+			self.eat(IN)
+			self.eat_space()
+			expr = self.expr()
+			expr2 = None
+		else:
+			self.error(self.token, "Unexpected token")
+
 		self.eat_newline_space()
 		self.eat(LBRACE)
 		content = self.compound_stmt()
 		self.eat(RBRACE)
 		self.eat_space()
-		return AST_For(token, var, expr, content)
+		return AST_For(token, token2, var, expr, expr2, content)
 
 	# print_stmt : PRINT [expr]
 	def print_stmt(self):

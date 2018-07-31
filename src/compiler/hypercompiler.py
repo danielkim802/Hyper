@@ -48,15 +48,19 @@ PRINT       = 0x22
 USE_FILE    = 0x23
 
 # control
-BTRUE       = 0x24
-BFALSE      = 0x25
-JMP         = 0x26
-HALT        = 0x27
+FOR_SETUP_TO= 0x24
+FOR_SETUP_IN= 0x25
+FOR_LOOP    = 0x26
+FOR_UPDATE  = 0x27
+BTRUE       = 0x28
+BFALSE      = 0x29
+JMP         = 0x2A
+HALT        = 0x2B
 
 # library functions
-LEN_ARR     = 0x28
-INPUT       = 0x29
-EXIT        = 0x2A
+LEN_ARR     = 0x2C
+INPUT       = 0x2D
+EXIT        = 0x2E
 
 opcodes = {
 	# expressions
@@ -81,7 +85,8 @@ opcodes = {
 	USE_FILE    : "use_file",
 
 	# control
-	BTRUE       : "btrue",       BFALSE      : "bfalse",
+	FOR_SETUP_TO: "for_setup_to",FOR_SETUP_IN: "for_setup_in",FOR_LOOP    : "for_loop",
+	FOR_UPDATE  : "for_update",  BTRUE       : "btrue",       BFALSE      : "bfalse",      
 	JMP         : "jmp",         HALT        : "halt",
 
 	# library functions
@@ -387,20 +392,21 @@ class Compiler(ASTTraverser):
 	def visit_For(self, node):
 		# loop setup
 		self.write_cmd(PUSH_ENV, node.token)
-		self.write_cmd(STORE_NAME, node.var.token)
+		if node.token2.type == hyperparser.TO:
+			self.visit(node.expr)
+			self.visit(node.expr2)
+			self.write_cmd(FOR_SETUP_TO)
+		if node.token2.type == hyperparser.IN:
+			self.write_cmd(LOAD_INT)
+			self.write_value(hyperparser.INT, 0)
+			self.visit(node.expr)
+			self.write_cmd(FOR_SETUP_IN)
 		self.write_value(hyperparser.STRING, node.var.name)
-		self.write_cmd(LOAD_INT)
-		self.write_value(hyperparser.INT, 0)
-		self.write_cmd(ASSIGN_NAME)
-		self.write_value(hyperparser.STRING, node.var.name)
-		loop_addr = len(self.buffer)
 
 		# condition check
-		self.write_cmd(LOAD_NAME, node.var.token)
+		loop_addr = len(self.buffer)
+		self.write_cmd(FOR_LOOP)
 		self.write_value(hyperparser.STRING, node.var.name)
-		self.visit(node.expr)
-		self.write_cmd(LT)
-		self.write_cmd(BFALSE)
 		end_addr = self.save(hyperparser.INT)
 
 		# body
@@ -409,14 +415,8 @@ class Compiler(ASTTraverser):
 		self.write_cmd(POP_ENV)
 
 		# increment counter
-		self.write_cmd(LOAD_INT)
-		self.write_value(hyperparser.INT, 1)
-		self.write_cmd(LOAD_NAME)
+		self.write_cmd(FOR_UPDATE)
 		self.write_value(hyperparser.STRING, node.var.name)
-		self.write_cmd(ADD)
-		self.write_cmd(ASSIGN_NAME)
-		self.write_value(hyperparser.STRING, node.var.name)
-		self.write_cmd(JMP)
 		self.write_value(hyperparser.INT, loop_addr)
 
 		# end of loop
@@ -527,6 +527,10 @@ class Compiler(ASTTraverser):
 		elif cmd == "return": self.write_cmd(RETURN, node.token)
 		elif cmd == "print": self.write_cmd(PRINT, node.token)
 		elif cmd == "use_file": self.write_cmd(USE_FILE, node.token); types = [string, name]
+		elif cmd == "for_setup_to": self.write_cmd(FOR_SETUP_TO, node.token); types = [name]
+		elif cmd == "for_setup_in": self.write_cmd(FOR_SETUP_IN, node.token); types = [name]
+		elif cmd == "for_loop": self.write_cmd(FOR_LOOP, node.token); types = [name, int]
+		elif cmd == "for_update": self.write_cmd(FOR_UPDATE, node.token); types = [name, int]
 		elif cmd == "btrue": self.write_cmd(BTRUE, node.token); types = [int]
 		elif cmd == "bfalse": self.write_cmd(BFALSE, node.token); types = [int]
 		elif cmd == "jmp": self.write_cmd(JMP, node.token); types = [int]
@@ -534,8 +538,7 @@ class Compiler(ASTTraverser):
 		elif cmd == "len_arr": self.write_cmd(LEN_ARR, node.token)
 		elif cmd == "input": self.write_cmd(INPUT, node.token)
 		elif cmd == "exit": self.write_cmd(EXIT, node.token)
-		else: 
-			self.error(node.token, "Invalid command")
+		else: self.error(node.token, "Invalid command")
 
 		if len(args) != len(types):
 			self.error(node.token, "Invalid number of arguments")

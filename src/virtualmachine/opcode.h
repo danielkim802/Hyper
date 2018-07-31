@@ -48,16 +48,20 @@ static const uint8_t PRINT       = 0x22;
 static const uint8_t USE_FILE    = 0x23;
 
 // control
-static const uint8_t BTRUE       = 0x24;
-static const uint8_t BFALSE      = 0x25;
-static const uint8_t JMP         = 0x26;
-static const uint8_t HALT        = 0x27;
+static const uint8_t FOR_SETUP_TO= 0x24;
+static const uint8_t FOR_SETUP_IN= 0x25;
+static const uint8_t FOR_LOOP    = 0x26;
+static const uint8_t FOR_UPDATE  = 0x27;
+static const uint8_t BTRUE       = 0x28;
+static const uint8_t BFALSE      = 0x29;
+static const uint8_t JMP         = 0x2A;
+static const uint8_t HALT        = 0x2B;
 
 // library functions
-static const uint8_t LEN_ARR     = 0x28;
-static const uint8_t INPUT       = 0x29;
-static const uint8_t EXIT        = 0x2A;
+static const uint8_t LEN_ARR     = 0x2C;
+static const uint8_t INPUT       = 0x2D;
+static const uint8_t EXIT        = 0x2E;
 
-static const uint8_t NUM_CMDS    = 0x2B;
+static const uint8_t NUM_CMDS    = 0x2F;
 
 #endif /* OPCODE_H */

@@ -46,7 +46,8 @@ return_stmt : RETURN [expr]
 
 while_stmt : WHILE expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
 
-for_stmt : FOR SPACE NAME SPACE TO expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
+for_stmt : FOR SPACE NAME [SPACE] ASSIGN [SPACE] expr TO expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
+         | FOR SPACE NAME [SPACE] IN [SPACE] expr (NEWLINE | SPACE)* LBRACE compound_stmt RBRACE
 
 print_stmt : PRINT [expr]
 

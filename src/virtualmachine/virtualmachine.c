@@ -729,6 +729,93 @@ void exec_use_file(struct VM* vm) {
 	free(vm->chunk.stringArgs);
 }
 
+void exec_for_setup_to(struct VM* vm) {
+	struct Value* end = valuestack_pop(vm->valueStack);
+	struct Value* start = valuestack_pop(vm->valueStack);
+	uint8_t* var = vm->chunk.stringArg;
+
+	if (end->type != INT || start->type != INT)
+		vmerror_raise(TYPE_ERROR, "Loop variables must be integers");
+
+	envstack_storeName(vm->envStack, var);
+	valuestack_push(vm->valueStack, start);
+	valuestack_push(vm->valueStack, end);
+}
+
+void exec_for_setup_in(struct VM* vm) {
+	struct Value* end = valuestack_pop(vm->valueStack);
+	struct Value* start = valuestack_pop(vm->valueStack);
+	uint8_t* var = vm->chunk.stringArg;
+
+	if ((end->type != ARR  && end->type != STRING) || start->type != INT)
+		vmerror_raise(TYPE_ERROR, "Loop variable must be array or string");
+	if (start->intValue < 0)
+		vmerror_raise(TYPE_ERROR, "Loop incrementer out of bounds");
+
+	envstack_storeName(vm->envStack, var);
+	valuestack_push(vm->valueStack, start);
+	valuestack_push(vm->valueStack, end);
+}
+
+void exec_for_loop(struct VM* vm) {
+	struct Value* end = valuestack_pop(vm->valueStack);
+	struct Value* start = valuestack_pop(vm->valueStack);
+	uint64_t jump_addr = vm->chunk.uintArg;
+	uint8_t* var = vm->chunk.stringArg;
+
+	if (start->type != INT)
+		vmerror_raise(TYPE_ERROR, "Invalid loop incrementer");
+	if (end->type != ARR && end->type != STRING && end->type != INT)
+		vmerror_raise(TYPE_ERROR, "Invalid loop variable");
+	if ((end->type == ARR || end->type == STRING) && start->intValue < 0)
+		vmerror_raise(TYPE_ERROR, "Loop incrementer out of bounds");	
+
+	if (end->type == ARR) {
+		if (start->intValue >= end->arrLen)
+			vm->pc = jump_addr;
+		else 
+			envstack_assignName(vm->envStack, var, end->arrValue[start->intValue]);
+	} else if (end->type == STRING) {
+		if (start->intValue >= end->stringLen)
+			vm->pc = jump_addr;
+		else {
+			struct Value* chr = value_make(STRING);
+			chr->stringValue = malloc(sizeof(uint8_t) * 2);
+			chr->stringValue[0] = end->stringValue[start->intValue];
+			chr->stringValue[1] = 0;
+			chr->stringLen = 1;
+			envstack_assignName(vm->envStack, var, chr);
+		}
+	} else if (end->type == INT) {
+		if (start->intValue >= end->intValue)
+			vm->pc = jump_addr;
+		envstack_assignName(vm->envStack, var, start);
+	}
+	free(var);
+
+	valuestack_push(vm->valueStack, start);
+	valuestack_push(vm->valueStack, end);
+}
+
+void exec_for_update(struct VM* vm) {
+	struct Value* end = valuestack_pop(vm->valueStack);
+	struct Value* start = valuestack_pop(vm->valueStack);
+	uint64_t jump_addr = vm->chunk.uintArg;
+	uint8_t* var = vm->chunk.stringArg;
+
+	if (start->type != INT)
+		vmerror_raise(TYPE_ERROR, "Invalid loop incrementer");
+
+	struct Value* startnew = value_make(INT);
+	startnew->intValue = start->intValue + 1;
+
+	vm->pc = jump_addr;
+
+	valuestack_push(vm->valueStack, startnew);
+	valuestack_push(vm->valueStack, end);
+}
+
+
 void exec_btrue(struct VM* vm) {
 	struct Value* value = valuestack_pop(vm->valueStack);
 
@@ -888,6 +975,10 @@ void vm_init(struct VM* vm, char* filepath, char* filename, struct GarbageCollec
 	exec_func[RETURN]      = exec_return;
 	exec_func[PRINT]       = exec_print;
 	exec_func[USE_FILE]    = exec_use_file;
+	exec_func[FOR_SETUP_TO]= exec_for_setup_to;
+	exec_func[FOR_SETUP_IN]= exec_for_setup_in;
+	exec_func[FOR_LOOP]    = exec_for_loop;
+	exec_func[FOR_UPDATE]  = exec_for_update;
 	exec_func[BTRUE]       = exec_btrue;
 	exec_func[BFALSE]      = exec_bfalse;
 	exec_func[JMP]         = exec_jmp;
