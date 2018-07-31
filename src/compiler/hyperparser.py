@@ -107,7 +107,7 @@ class Lexer(object):
 		self.line = 1
 
 	def error(self, char, msg):
-		print "line %i [SyntaxError]: '%s' %s" % (self.line, char, msg)
+		print "line %i [SyntaxError]: \"%s\" %s" % (self.line, char, msg)
 		sys.exit(0)
 
 	def get(self):
@@ -496,7 +496,7 @@ class Parser(object):
 		elif token.type == EOF:
 			print "line %i [SyntaxError]: %s" % (token.line, "Unexpected end of statement")
 		else:
-			print "line %i [SyntaxError]: '%s' %s" % (token.line, str(token.value), msg)
+			print "line %i [SyntaxError]: \"%s\" %s" % (token.line, str(token.value), msg)
 		if self.trace:
 			raise Exception()
 		sys.exit(0)

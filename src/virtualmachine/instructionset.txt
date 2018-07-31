@@ -10,7 +10,7 @@ args can be one of INT, FLOAT, STRING, BOOL and sizes are given below:
 INT    : 8 bytes
 FLOAT  : 8 bytes
 STRING : len of string bytes + 1 (for null terminator)
-NAME   : len of string bytes + 1 (for null terminator)
+NAME   : len of name bytes + 1 (for null terminator)
 BOOL   : 1 byte
 
 *note: STRINGs are indistinguishable from NAMEs when stored in byte code but
@@ -363,7 +363,7 @@ BFALSE addr                                                         opcode[ 0x25
 ──────────────────────────────────────────────────────────────────────────────────
 JMP addr                                                            opcode[ 0x26 ]
 	addr : INT
-	
+
 	pc = addr
 
 	*note: [addr] is the address relative to the current

@@ -75,6 +75,7 @@ struct Context {
 	uint64_t pc;
 	uint8_t halt;
 	struct Chunk chunk;
+	uint8_t* dir;
 };
 
 struct ContextStack {

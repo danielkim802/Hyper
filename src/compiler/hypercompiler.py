@@ -110,7 +110,7 @@ class Compiler(ASTTraverser):
 		self.warnings = ""
 
 	def error(self, token, msg):
-		print "line %i [SyntaxError]: '%s' %s" % (token.line, str(token.value), msg)
+		print "line %i [SyntaxError]: \"%s\" %s" % (token.line, str(token.value), msg)
 		sys.exit(0)
 
 	def warning(self, msg):

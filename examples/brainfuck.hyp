@@ -77,8 +77,3 @@ var brainfuck = struct {
 		}
 	}
 }
-
-var program = '[-]+>>>>>>>[-]+++++++++++++++++++++++++++++<<<<<[-]+++++++++++++++++++++++++++++>>[-]+++++++++++++++++++++>>>>>>>>>>>>>>>>>>>>>[-]++++++++++'
-brainfuck.load_program program
-brainfuck.run null
-print brainfuck.data

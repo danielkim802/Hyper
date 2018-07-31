@@ -19,6 +19,7 @@ void value_free(struct Value* value) {
 		case FUN:
 			if (value->funEnvStack->size != 2)
 				vmerror_raise(RUNTIME_ERROR, "Incorrect number of function environments");
+			*value->funEnvStack->envs[0].inUse -= 1;
 			*value->funEnvStack->envs[1].inUse -= 1;
 			envstack_free(value->funEnvStack);
 			valuestack_free(value->funClosureStack);

@@ -336,9 +336,10 @@ void exec_fun_call(struct VM* vm) {
 	for (uint64_t i = 0; i < fun->funClosureStack->size; i ++)
 		valuestack_push(funcopy->funClosureStack, fun->funClosureStack->values[i]);
 	funcopy->funEnvStack = envstack_make();
-	envstack_pushEnv(funcopy->funEnvStack, vm->globalEnv);
+	envstack_pushEnv(funcopy->funEnvStack, &fun->funEnvStack->envs[0]);
 	envstack_pushEnv(funcopy->funEnvStack, &fun->funEnvStack->envs[1]);
-	*envstack_peek(funcopy->funEnvStack)->inUse += 1;
+	*fun->funEnvStack->envs[0].inUse += 1;
+	*fun->funEnvStack->envs[1].inUse += 1;
 	fun = funcopy;
 
 	// check function argument count
@@ -496,6 +497,7 @@ void exec_make_fun(struct VM* vm) {
 
 	// push global environment
 	envstack_pushEnv(value->funEnvStack, vm->globalEnv);
+	*envstack_peek(value->funEnvStack)->inUse += 1;
 
 	// push surrounding environment (for closure)
 	if (envstack_peek(vm->envStack)->head != vm->globalEnv->head)
@@ -667,8 +669,21 @@ void exec_use_file(struct VM* vm) {
 	fseek(f, 0, SEEK_END);
 	uint64_t filesize = ftell(f);
 	rewind(f);
-	free(file);
 	free(filec);
+
+	// get new current directory
+	unsigned int len = strlen(file);
+	int pos = len - 1;
+	while (pos >= 0 && file[pos] != '/')
+		pos--;
+	pathlen = pos >= 0 ? pos + 2 : 3;
+	char* newdir = malloc(len + 1);
+	if (pos >= 0)
+		strcpy(newdir, file);
+	else
+		strcpy(newdir, "./");
+	newdir[pathlen - 1] = 0;
+	free(file);
 
 	// load main program memory
 	uint8_t* currmem = vm->mainMem;
@@ -684,6 +699,7 @@ void exec_use_file(struct VM* vm) {
 	vm->pc = vm->mainMemSize;
 	vm->halt = 0;
 	vm->mainMemSize += filesize;
+	vm->dir = (uint8_t*) newdir;
 
 	// run vm
 	vm_run(vm);
@@ -700,6 +716,7 @@ void exec_use_file(struct VM* vm) {
 	free(vm->globalEnv);
 	valuestack_free(vm->valueStack);
 	valuestack_free(vm->callStack);
+	free(vm->dir);
 
 	// restore context
 	struct Context* context = contextstack_pop(vm->contextStack);
@@ -889,7 +906,7 @@ struct VM* vm_make(char* filepath, char* filename, struct GarbageCollector* gc) 
 }
 
 void vm_free(struct VM* vm) {
-	while(vm->envStack->size > 1)
+	while (vm->envStack->size > 1)
 		envstack_pop(vm->envStack);
 	envstack_push(vm->envStack, 0);
 	*envstack_peek(vm->envStack)->inUse = 1;
@@ -900,8 +917,8 @@ void vm_free(struct VM* vm) {
 	garbagecollector_clean(vm->gc, vm);
 
 	free(vm->mainMem);
-	*vm->globalEnv->inUse = 0;
-	env_free(vm->globalEnv);
+	// *vm->globalEnv->inUse = 0;
+	// env_free(vm->globalEnv);
 	valuestack_free(vm->valueStack);
 	valuestack_free(vm->callStack);
 	contextstack_free(vm->contextStack);
@@ -949,6 +966,7 @@ void vm_loadContext(struct VM* vm, struct Context* context) {
 	vm->pc = context->pc;
 	vm->halt = context->halt;
 	vm->chunk = context->chunk;
+	vm->dir = context->dir;
 }
 
 uint64_t vm_pcOffset(struct VM* vm) {
