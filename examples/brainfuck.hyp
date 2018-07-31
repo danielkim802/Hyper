@@ -76,4 +76,6 @@ var brainfuck = struct {
 			pc += 1
 		}
 	}
+
+	$halt
 }

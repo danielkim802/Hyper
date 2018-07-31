@@ -328,10 +328,10 @@ USE_FILE file name                                                  opcode[ 0x23
 	file : STRING
 	name : NAME
 
-	*note: compiles [file] (relative to the current directory) and 
-	loads its global environment into a struct which is stored in 
-	the variable [name] in the environment in which the command is
-	called.
+	*note: compiles [file] (relative to the current directory), executes
+	the file until it reaches a HALT command, and loads the resulting 
+	global environment into a struct which is stored in the variable [name]
+	in the environment in which this command was called.
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                                          *** Instructions for control flow *** │
 └────────────────────────────────────────────────────────────────────────────────┘
@@ -371,7 +371,10 @@ JMP addr                                                            opcode[ 0x26
 	shifted to allow importing other files. 
 ──────────────────────────────────────────────────────────────────────────────────
 HALT                                                                opcode[ 0x27 ]
-	*note: sets the halt vm flag to true. 
+	*note: sets the halt vm flag to true. This will cause the vm to 
+	exit execution of the current file but not necessarily stop the
+	whole program if the current file is being imported into another
+	file.
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                       *** Additional instructions for the standard library *** │
 └────────────────────────────────────────────────────────────────────────────────┘

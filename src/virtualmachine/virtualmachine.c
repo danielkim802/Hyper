@@ -777,7 +777,7 @@ void exec_input(struct VM* vm) {
 	printf("%s", value->stringValue);
 	struct Value* string = value_make(STRING);
 	string->stringValue = malloc(sizeof(uint8_t) * 100); // TODO: dynamic size
-	scanf("%[0-9a-zA-Z ]", string->stringValue);
+	scanf("%100[0-9a-zA-Z ]", string->stringValue);
 	valuestack_push(vm->valueStack, string);
 }
 
