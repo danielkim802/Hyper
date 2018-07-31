@@ -6,7 +6,7 @@ stack and PUSH_ENV pushes to it. Bytecode commands are stored as follows:
 | 1 byte | 8 bytes | see below | see below | ...
 | opcode | line #  |    arg0   |    arg 1  | ...
 
-args can be one of INT, FLOAT, STRING, BOOL and sizes are given below:
+args can be one of INT, FLOAT, STRING, BOOL, NAME and sizes are given below:
 INT    : 8 bytes
 FLOAT  : 8 bytes
 STRING : len of string bytes + 1 (for null terminator)
