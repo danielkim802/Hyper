@@ -101,7 +101,7 @@ The virtual machine works on a stack-based architecture so the first two lines a
 ```
 ; file 'test.hyp'
 var hello = fun {
-	print 'hello, world!'
+  print 'hello, world!'
 }
 hello null
 
