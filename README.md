@@ -1,5 +1,5 @@
 # Hyper
-Hyper is a language I made for fun with the simple goal of minimizing using the shift key as much as possible (and minimizing keystrokes in general), so all syntax (with the exception of arithmetic operators and begin/end braces) can be written shift-free! The language itself is meant to be a scripting language with highly functional features which are outlined below. Take a look at the examples directory to get a feel for the syntax and some code samples (see src/compiler/grammar.txt for full grammar specification). Note that while the language is more or less functional at this point, it is still a work in progress: the standard library still needs to be written and some more commonly used operators need to be implemented into the language. Hyper is parsed and compiled into bytecode using Python and then executed using a virtual machine written in C.
+Hyper is a language I made for fun with the simple goal of minimizing using the shift key as much as possible (and minimizing keystrokes in general), so all syntax (with the exception of arithmetic operators and begin/end braces) can be written shift-free! The language itself is Turing complete and meant to be a scripting language with highly functional features which are outlined below. Take a look at the examples directory to get a feel for the syntax and some code samples (see src/compiler/grammar.txt for full grammar specification). Note that while the language is more or less functional at this point, it is still a work in progress: the standard library still needs to be written and some more commonly used operators need to be implemented into the language. Hyper is parsed and compiled into bytecode using Python and then executed using a virtual machine written in C.
 
 ## Getting started
 To build Hyper (you need Python 2.7 and gcc):
@@ -88,10 +88,39 @@ $ add
 $ print
 ; output: 50
 
-$ store_name hello
-$ load_string 'hello world'
-$ assign_name hello
-print hello ; output: hello world
+var c = 0
+for i to 10 {
+  $ load_name c
+  $ load_int 1
+  $ add
+  $ assign_name c
+}
+print c ; output: 10
 ```
-The virtual machine works on a stack-based architecture so the first two lines are pushing 20 and 30 to the stack, 'add' pops two elements off the stack, adds them, and pushes the result onto the stack, and 'print' pops one element and prints it.
+The virtual machine works on a stack-based architecture so the first two lines are pushing 20 and 30 to the stack, 'add' pops two elements off the stack, adds them, and pushes the result onto the stack, and 'print' pops one element and prints it. Note that you can also disassemble a script using the -d flag to see the assembly that the virtual machine will run:
+```
+; file 'test.hyp'
+var hello = fun {
+	print 'hello, world!'
+}
+hello null
 
+; terminal
+./hyper test.hyp -d
+
+; output
+[180 bytes read]
+ byte   line
+[   0] [   1] MAKE_FUN 42 0 
+[  25] [   1] JMP 92
+[  42] [   2] LOAD_STRING 'hello, world!'
+[  65] [   2] PRINT
+[  74] [   1] LOAD_NULL
+[  83] [   1] RETURN
+[  92] [   1] STORE_NAME hello
+[ 107] [   1] ASSIGN_NAME hello
+[ 122] [   4] LOAD_NULL
+[ 131] [   4] LOAD_NAME hello
+[ 146] [   4] FUN_CALL 1 171
+[ 171] [   4] HALT
+```
