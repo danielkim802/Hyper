@@ -1,5 +1,5 @@
 # Hyper
-Hyper is a language I made for fun with the simple goal of minimizing using the shift key as much as possible (and minimizing keystrokes in general), so all syntax (with the exception of arithmetic operators and begin/end braces) can be written shift-free! The language itself is Turing complete and is meant to be a scripting language with highly functional features which are outlined below. Take a look at the examples directory to get a feel for the syntax and some code samples (see src/compiler/grammar.txt for full grammar specification). Note that while the language is more or less functional at this point, it is still a work in progress: the standard library still needs to be written and some more commonly used operators need to be implemented into the language. Hyper is parsed and compiled into bytecode using Python and then executed using a virtual machine written in C.
+Hyper is a language I made for fun with the simple goal of minimizing using the shift key as much as possible (and minimizing keystrokes in general), so all syntax (with the exception of arithmetic operators and begin/end braces) can be written shift-free! The language itself is Turing complete and is meant to be a scripting language with highly functional features which are outlined below. Take a look at the examples directory to get a feel for the syntax and some code samples (see docs/grammar.txt for full grammar specification). Note that while the language is more or less functional at this point, it is still a work in progress: the standard library still needs to be written and some more commonly used operators need to be implemented into the language. Hyper is parsed and compiled into bytecode using Python and then executed using a virtual machine written in C.
 
 ## Getting started
 To build Hyper (you need Python 2.7 and gcc):
@@ -80,7 +80,7 @@ print point.hash null ; output: 100
 ```
 
 ## Inline Assembly
-Hyper supports inline assembly giving the user control over the virtual machine, but may lead to unpredictable behavior if you don't know what you're doing. Take a look at src/virtualmachine/instructionset.txt for correct arguments for each function.
+Hyper supports inline assembly giving the user control over the virtual machine, but may lead to unpredictable behavior if you don't know what you're doing. Take a look at docs/instructionset.txt for correct arguments for each function.
 ```
 $ load_int 20
 $ load_int 30
