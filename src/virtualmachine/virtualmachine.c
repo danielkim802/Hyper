@@ -187,6 +187,9 @@ void exec_add(struct VM* vm) {
 	} else if (value_typeCheck(value1, value2, FLOAT, INT)) {
 		res = value_make(FLOAT);
 		res->floatValue = value1->floatValue + value2->intValue;
+	} else if (value_typeCheck(value1, value2, FLOAT, FLOAT)) {
+		res = value_make(FLOAT);
+		res->floatValue = value1->floatValue + value2->floatValue;
 	} else if (value_typeCheck(value1, value2, STRING, STRING)) {
 		res = value_make(STRING);
 		uint64_t len1 = strlen((char*) value1->stringValue);
