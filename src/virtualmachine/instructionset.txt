@@ -1,7 +1,7 @@
 ** Instructions operate on a stack of values and a stack of environments (an 
 environment is basically a hashmap from strings -> values). POP pops from the 
 value stack and PUSH pushes to the value stack. POP_ENV pops from the environment 
-stack and PUSH_ENV pushes to it. Opcodes are stored as follows:
+stack and PUSH_ENV pushes to it. Bytecode commands are stored as follows:
 
 | 1 byte | 8 bytes | see below | see below | ...
 | opcode | line #  |    arg0   |    arg 1  | ...
