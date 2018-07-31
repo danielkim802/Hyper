@@ -15,3 +15,7 @@ var input = fun prompt {
 	$ input
 	$ return
 }
+
+var exit = fun {
+	$exit
+}

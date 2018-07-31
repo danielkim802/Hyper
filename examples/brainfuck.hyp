@@ -30,7 +30,7 @@ var brainfuck = struct {
 	var exec_output = fun { print data[dp] }
 
 	; ,
-	var exec_input = fun {}
+	var exec_input = fun { data[dp] = std.input 'input: ' }
 
 	; [
 	var exec_begin = fun {

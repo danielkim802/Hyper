@@ -390,3 +390,7 @@ INPUT                                                               opcode[ 0x29
 
 	*note: reads in user input as a string and pushes it to the stack. Prints
 	popped string as a prompt before requesting user input.
+──────────────────────────────────────────────────────────────────────────────────
+EXIT                                                                opcode[ 0x2A ]
+	*note: exits the program (calls exit(0) in virtual machine).
+──────────────────────────────────────────────────────────────────────────────────

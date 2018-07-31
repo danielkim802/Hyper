@@ -338,8 +338,6 @@ void exec_fun_call(struct VM* vm) {
 	funcopy->funEnvStack = envstack_make();
 	envstack_pushEnv(funcopy->funEnvStack, &fun->funEnvStack->envs[0]);
 	envstack_pushEnv(funcopy->funEnvStack, &fun->funEnvStack->envs[1]);
-	*fun->funEnvStack->envs[0].inUse += 1;
-	*fun->funEnvStack->envs[1].inUse += 1;
 	fun = funcopy;
 
 	// check function argument count
@@ -377,7 +375,6 @@ void exec_fun_call(struct VM* vm) {
 	// make closure if not enough arguments
 	if (argc < funArgc) {
 		valuestack_push(vm->valueStack, fun);
-		*envstack_peek(fun->funEnvStack)->inUse -= 1;
 		envstack_pop(fun->funEnvStack);
 		return;
 	}
@@ -497,14 +494,12 @@ void exec_make_fun(struct VM* vm) {
 
 	// push global environment
 	envstack_pushEnv(value->funEnvStack, vm->globalEnv);
-	*envstack_peek(value->funEnvStack)->inUse += 1;
 
 	// push surrounding environment (for closure)
 	if (envstack_peek(vm->envStack)->head != vm->globalEnv->head)
 		envstack_pushEnv(value->funEnvStack, envstack_peek(vm->envStack));
 	else
 		envstack_push(value->funEnvStack, vm->valueStack->size);
-	*envstack_peek(value->funEnvStack)->inUse += 1;
 
 	// free chunk and push to value stack
 	free(vm->chunk.uintArgs);
@@ -649,7 +644,6 @@ void exec_use_file(struct VM* vm) {
 	envstack_push(vm->envStack, 0);
 	vm->globalEnv = malloc(sizeof(struct Env));
 	*vm->globalEnv = *envstack_peek(vm->envStack);
-	*vm->globalEnv->inUse = 1;
 
 	// setup dummy function in call stack for global environment
 	struct Value* dummy = value_make(FUN);
@@ -709,7 +703,6 @@ void exec_use_file(struct VM* vm) {
 
 	// cleanup
 	envstack_push(vm->envStack, 0);
-	*envstack_peek(vm->envStack)->inUse = 1;
 	valuestack_pop(vm->callStack);
 	while (vm->valueStack->size > 0)
 		valuestack_pop(vm->valueStack);
@@ -726,6 +719,7 @@ void exec_use_file(struct VM* vm) {
 	struct Value* value = value_make(STRUCT);
 	value->structValue = malloc(sizeof(struct Env));
 	*value->structValue = importStruct;
+	*value->structValue->inUse += 1;
 	envstack_storeName(vm->envStack, vm->chunk.stringArgs[1]);
 	envstack_assignName(vm->envStack, vm->chunk.stringArgs[1], value);
 	free(vm->chunk.stringArgs[1]);
@@ -787,6 +781,10 @@ void exec_input(struct VM* vm) {
 	valuestack_push(vm->valueStack, string);
 }
 
+void exec_exit(struct VM* vm) {
+	exit(0);
+}
+
 void (*exec_func[NUM_CMDS]) (struct VM* vm);
 
 void vm_init(struct VM* vm, char* filepath, char* filename, struct GarbageCollector* gc) {
@@ -797,7 +795,6 @@ void vm_init(struct VM* vm, char* filepath, char* filename, struct GarbageCollec
 	envstack_push(vm->envStack, 0);
 	vm->globalEnv = malloc(sizeof(struct Env));
 	*vm->globalEnv = *envstack_peek(vm->envStack);
-	*vm->globalEnv->inUse = 1;
 	vm->gc = gc;
 	value_gc = gc;
 	vm->contextStack = contextstack_make();
@@ -894,6 +891,7 @@ void vm_init(struct VM* vm, char* filepath, char* filename, struct GarbageCollec
 	exec_func[HALT]        = exec_halt;
 	exec_func[LEN_ARR]     = exec_len_arr;
 	exec_func[INPUT]       = exec_input;
+	exec_func[EXIT]        = exec_exit;
 
 	// setup error
 	vmerror_vm = vm;
@@ -906,19 +904,15 @@ struct VM* vm_make(char* filepath, char* filename, struct GarbageCollector* gc) 
 }
 
 void vm_free(struct VM* vm) {
-	while (vm->envStack->size > 1)
-		envstack_pop(vm->envStack);
-	envstack_push(vm->envStack, 0);
-	*envstack_peek(vm->envStack)->inUse = 1;
-	valuestack_pop(vm->callStack);
+	while (vm->callStack->size > 0)
+		valuestack_pop(vm->callStack);
 	while (vm->valueStack->size > 0)
 		valuestack_pop(vm->valueStack);
 
 	garbagecollector_clean(vm->gc, vm);
 
 	free(vm->mainMem);
-	// *vm->globalEnv->inUse = 0;
-	// env_free(vm->globalEnv);
+	free(vm->globalEnv);
 	valuestack_free(vm->valueStack);
 	valuestack_free(vm->callStack);
 	contextstack_free(vm->contextStack);

@@ -18,8 +18,10 @@ struct EnvStack* envstack_make() {
 }
 
 void envstack_free(struct EnvStack* es) {
-	for (uint64_t i = 0; i < es->size; i ++)
+	for (uint64_t i = 0; i < es->size; i ++){
+		*es->envs[i].inUse -= 1;
 		env_freeContent(&es->envs[i]);
+	}
 	free(es->envs);
 	free(es);
 }
@@ -38,6 +40,7 @@ void envstack_push(struct EnvStack* es, uint64_t pos) {
 		es->max *= 2;
 	}
 	env_init(&es->envs[es->size++], pos);
+	*es->envs[es->size - 1].inUse += 1;
 }
 
 void envstack_pushEnv(struct EnvStack* es, struct Env* env) {
@@ -51,12 +54,14 @@ void envstack_pushEnv(struct EnvStack* es, struct Env* env) {
 	}
 
 	es->envs[es->size++] = *env;
+	*env->inUse += 1;
 }
 
 uint64_t envstack_pop(struct EnvStack* es) {
 	if (es->size == 0)
 		vmerror_raise(RUNTIME_ERROR, "Environment stack empty");
 	uint64_t pos = es->envs[es->size - 1].stackPos;
+	*es->envs[es->size - 1].inUse -= 1;
 	env_freeContent(&es->envs[--es->size]);
 	return pos;
 }

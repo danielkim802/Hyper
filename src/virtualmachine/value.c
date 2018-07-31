@@ -17,10 +17,6 @@ struct Value* value_make(enum Type type) {
 void value_free(struct Value* value) {
 	switch (value->type) {
 		case FUN:
-			if (value->funEnvStack->size != 2)
-				vmerror_raise(RUNTIME_ERROR, "Incorrect number of function environments");
-			*value->funEnvStack->envs[0].inUse -= 1;
-			*value->funEnvStack->envs[1].inUse -= 1;
 			envstack_free(value->funEnvStack);
 			valuestack_free(value->funClosureStack);
 			for (uint64_t i = 0; i < value->funArgc; i ++)
@@ -83,10 +79,15 @@ void value_print(struct Value* value) {
 		case ARR:
 			printf("[");
 			for (uint64_t i = 0; i < value->arrLen; i ++) {
-				if (value->arrValue[i]->type == ARR)
+				if (value->arrValue[i]->type == ARR) {
 					printf("array");
-				else
+				} else if (value->arrValue[i]->type == STRING) {
+					printf("'");
 					value_print(value->arrValue[i]);
+					printf("'");
+				} else {
+					value_print(value->arrValue[i]);
+				}
 				if (i != value->arrLen - 1)
 					printf(", ");
 			}
