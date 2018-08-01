@@ -386,8 +386,7 @@ FOR_LOOP name addr                                                  opcode[ 0x26
 	the indices and updates [name] to the correct array/string 
 	element.
 ──────────────────────────────────────────────────────────────────────────────────
-FOR_UPDATE name addr                                                opcode[ 0x27 ]
-	name : NAME
+FOR_UPDATE addr                                                     opcode[ 0x27 ]
 	addr : INT
 
 	POP --> end

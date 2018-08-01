@@ -221,7 +221,7 @@ class Lexer(object):
 	def get_asm(self):
 		self.get()
 		res = ""
-		while not self.eof() and self.char != '\n':
+		while not self.eof() and self.char not in ['\n', ';']:
 			res += self.get()
 		return Token(ASM, res, self.line)
 

@@ -416,7 +416,6 @@ class Compiler(ASTTraverser):
 
 		# increment counter
 		self.write_cmd(FOR_UPDATE)
-		self.write_value(hyperparser.STRING, node.var.name)
 		self.write_value(hyperparser.INT, loop_addr)
 
 		# end of loop
@@ -530,7 +529,7 @@ class Compiler(ASTTraverser):
 		elif cmd == "for_setup_to": self.write_cmd(FOR_SETUP_TO, node.token); types = [name]
 		elif cmd == "for_setup_in": self.write_cmd(FOR_SETUP_IN, node.token); types = [name]
 		elif cmd == "for_loop": self.write_cmd(FOR_LOOP, node.token); types = [name, int]
-		elif cmd == "for_update": self.write_cmd(FOR_UPDATE, node.token); types = [name, int]
+		elif cmd == "for_update": self.write_cmd(FOR_UPDATE, node.token); types = [int]
 		elif cmd == "btrue": self.write_cmd(BTRUE, node.token); types = [int]
 		elif cmd == "bfalse": self.write_cmd(BFALSE, node.token); types = [int]
 		elif cmd == "jmp": self.write_cmd(JMP, node.token); types = [int]

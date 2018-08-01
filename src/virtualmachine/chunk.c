@@ -154,7 +154,6 @@ uint64_t chunk_get(struct Chunk* chunk, uint8_t* mem) {
 			ptr += read_uint(chunk, &mem[ptr]);
 			break;
 		case FOR_UPDATE:
-			ptr += read_string(chunk, &mem[ptr]);
 			ptr += read_uint(chunk, &mem[ptr]);
 			break;
 		case BTRUE:
@@ -256,9 +255,7 @@ void chunk_free(struct Chunk* chunk) {
 		case FOR_LOOP: 
 			free(chunk->stringArg);
 			break;
-		case FOR_UPDATE:
-			free(chunk->stringArg);
-			break;
+		case FOR_UPDATE: break;
 		case BTRUE: break;
 		case BFALSE: break;
 		case JMP: break;
@@ -327,7 +324,7 @@ void chunk_print(struct Chunk* chunk) {
 		case FOR_SETUP_TO: printf("FOR_SETUP_TO %s", chunk->stringArg); break;
 		case FOR_SETUP_IN: printf("FOR_SETUP_IN %s", chunk->stringArg); break;
 		case FOR_LOOP: printf("FOR_LOOP %s %llu",chunk->stringArg, chunk->uintArg); break;
-		case FOR_UPDATE: printf("FOR_UPDATE %s %llu", chunk->stringArg, chunk->uintArg); break;
+		case FOR_UPDATE: printf("FOR_UPDATE %llu", chunk->uintArg); break;
 		case BTRUE: printf("BTRUE %llu", chunk->uintArg); break;
 		case BFALSE: printf("BFALSE %llu", chunk->uintArg); break;
 		case JMP: printf("JMP %llu", chunk->uintArg); break;

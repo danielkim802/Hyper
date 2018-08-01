@@ -702,11 +702,14 @@ void exec_use_file(struct VM* vm) {
 	vm_run(vm);
 
 	// save environment for struct
-	struct Env importStruct = *vm->globalEnv;
+	struct Value* value = value_make(STRUCT);
+	value->structValue = malloc(sizeof(struct Env));
+	*value->structValue = *vm->globalEnv;
+	*value->structValue->inUse += 1;
 
 	// cleanup
-	envstack_push(vm->envStack, 0);
-	valuestack_pop(vm->callStack);
+	while (vm->callStack->size > 0)
+		valuestack_pop(vm->callStack);
 	while (vm->valueStack->size > 0)
 		valuestack_pop(vm->valueStack);
 	free(vm->globalEnv);
@@ -719,10 +722,6 @@ void exec_use_file(struct VM* vm) {
 	vm_loadContext(vm, context);
 
 	// load struct into environment
-	struct Value* value = value_make(STRUCT);
-	value->structValue = malloc(sizeof(struct Env));
-	*value->structValue = importStruct;
-	*value->structValue->inUse += 1;
 	envstack_storeName(vm->envStack, vm->chunk.stringArgs[1]);
 	envstack_assignName(vm->envStack, vm->chunk.stringArgs[1], value);
 	free(vm->chunk.stringArgs[1]);
@@ -740,6 +739,7 @@ void exec_for_setup_to(struct VM* vm) {
 	envstack_storeName(vm->envStack, var);
 	valuestack_push(vm->valueStack, start);
 	valuestack_push(vm->valueStack, end);
+	free(var);
 }
 
 void exec_for_setup_in(struct VM* vm) {
@@ -755,6 +755,7 @@ void exec_for_setup_in(struct VM* vm) {
 	envstack_storeName(vm->envStack, var);
 	valuestack_push(vm->valueStack, start);
 	valuestack_push(vm->valueStack, end);
+	free(var);
 }
 
 void exec_for_loop(struct VM* vm) {
@@ -801,7 +802,6 @@ void exec_for_update(struct VM* vm) {
 	struct Value* end = valuestack_pop(vm->valueStack);
 	struct Value* start = valuestack_pop(vm->valueStack);
 	uint64_t jump_addr = vm->chunk.uintArg;
-	uint8_t* var = vm->chunk.stringArg;
 
 	if (start->type != INT)
 		vmerror_raise(TYPE_ERROR, "Invalid loop incrementer");
