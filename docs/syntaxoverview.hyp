@@ -57,8 +57,14 @@ if false {
 
 ; for loop
 var count = 0
-for i to 10 {
+for i=0 to 10 {
 	count += 1
+}
+for i in [1,2,3,4] {
+	print i
+}
+for i in 'hello' {
+	print i
 }
 
 ; while loop
@@ -74,7 +80,7 @@ std.len [1, 2, 3]
 $ store_name string
 $ load_string 'k'
 $ assign_name string
-for i to 20 {
+for i=0 to 20 {
 	$ load_string 'o'
 	$ load_name string
 	$ add

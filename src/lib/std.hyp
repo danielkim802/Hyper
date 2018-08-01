@@ -6,7 +6,7 @@ var len = fun arr {
 
 var map = fun f arr {
 	var res = []
-	for i to len arr { res += [f arr[i]] }
+	for i=0 to len arr { res += [f arr[i]] }
 	return res
 }
 

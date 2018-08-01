@@ -335,7 +335,74 @@ USE_FILE file name                                                  opcode[ 0x23
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                                          *** Instructions for control flow *** │
 └────────────────────────────────────────────────────────────────────────────────┘
-BTRUE addr                                                          opcode[ 0x24 ]
+FOR_SETUP_TO name                                                   opcode[ 0x24 ]
+	name : NAME
+
+	POP --> end
+	POP --> start
+	start --> PUSH
+	end --> PUSH
+
+	type end = INT
+	type start = INT
+
+	*note: this instruction simply pops the start and end values of the 
+	for loop using 'to' syntax and checks for correct types. An error is 
+	raised if types are incorrect. [name] is the name of the loop variable 
+	which is stored in the current environment.
+──────────────────────────────────────────────────────────────────────────────────
+FOR_SETUP_IN name                                                   opcode[ 0x25 ]
+	name : NAME
+
+	POP --> end
+	POP --> start
+	start --> PUSH
+	end --> PUSH
+
+	type start = INT
+	type end = ARR | STRING
+
+	*note: this instruction simply pops the start and end values of the 
+	for loop using 'in' syntax and checks for correct types. An error is 
+	raised if types are incorrect. The start value in this case is the 
+	array index counter. [name] is the name of the loop variable 
+	which is stored in the current environment.
+──────────────────────────────────────────────────────────────────────────────────
+FOR_LOOP name addr                                                  opcode[ 0x26 ]
+	name : NAME
+	addr : INT
+
+	POP --> end
+	POP --> start
+	start --> PUSH
+	end --> PUSH
+
+	type start = INT
+	type end = INT | ARR | STRING
+
+	*note: this instruction checks the for loop condition. If end is an 
+	integer, it simply checks start <= end and jumps to [addr] if not. If 
+	end is an array or string, it checks whether start is within bounds of 
+	the indices and updates [name] to the correct array/string 
+	element.
+──────────────────────────────────────────────────────────────────────────────────
+FOR_UPDATE name addr                                                opcode[ 0x27 ]
+	name : NAME
+	addr : INT
+
+	POP --> end
+	POP --> start
+	start + 1 --> PUSH
+	end --> PUSH
+
+	type start = INT
+	type end = INT | ARR | STRING
+
+	*note: this instruction updates the counter for the for loop, popping 
+	start off the stack, and pushing a new value of type INT with value 
+	start + 1. 
+──────────────────────────────────────────────────────────────────────────────────
+BTRUE addr                                                          opcode[ 0x28 ]
 	addr : INT
 
 	POP --> value
@@ -348,7 +415,7 @@ BTRUE addr                                                          opcode[ 0x24
 	file. During runtime, this address will possibly be 
 	shifted to allow importing other files. 
 ──────────────────────────────────────────────────────────────────────────────────
-BFALSE addr                                                         opcode[ 0x25 ]
+BFALSE addr                                                         opcode[ 0x29 ]
 	addr : INT
 
 	POP --> value
@@ -361,7 +428,7 @@ BFALSE addr                                                         opcode[ 0x25
 	file. During runtime, this address will possibly be 
 	shifted to allow importing other files. 
 ──────────────────────────────────────────────────────────────────────────────────
-JMP addr                                                            opcode[ 0x26 ]
+JMP addr                                                            opcode[ 0x2A ]
 	addr : INT
 
 	pc = addr
@@ -370,7 +437,7 @@ JMP addr                                                            opcode[ 0x26
 	file. During runtime, this address will possibly be 
 	shifted to allow importing other files. 
 ──────────────────────────────────────────────────────────────────────────────────
-HALT                                                                opcode[ 0x27 ]
+HALT                                                                opcode[ 0x2B ]
 	*note: sets the halt vm flag to true. This will cause the vm to 
 	exit execution of the current file but not necessarily stop the
 	whole program if the current file is being imported into another
@@ -378,13 +445,13 @@ HALT                                                                opcode[ 0x27
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                       *** Additional instructions for the standard library *** │
 └────────────────────────────────────────────────────────────────────────────────┘
-LEN_ARR                                                             opcode[ 0x28 ]
+LEN_ARR                                                             opcode[ 0x2C ]
 	POP --> value
 	length(value) --> PUSH
 
 	type value = ARR | STRING
 ──────────────────────────────────────────────────────────────────────────────────
-INPUT                                                               opcode[ 0x29 ]
+INPUT                                                               opcode[ 0x2D ]
 	POP --> prompt
 	print prompt
 	input --> PUSH
@@ -394,6 +461,6 @@ INPUT                                                               opcode[ 0x29
 	*note: reads in user input as a string and pushes it to the stack. Prints
 	popped string as a prompt before requesting user input.
 ──────────────────────────────────────────────────────────────────────────────────
-EXIT                                                                opcode[ 0x2A ]
+EXIT                                                                opcode[ 0x2E ]
 	*note: exits the program (calls exit(0) in virtual machine).
 ──────────────────────────────────────────────────────────────────────────────────
