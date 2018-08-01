@@ -89,7 +89,7 @@ $ print
 ; output: 50
 
 var c = 0
-for i to 10 {
+for i=0 to 10 {
   $ load_name c
   $ load_int 1
   $ add
