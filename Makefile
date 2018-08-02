@@ -18,3 +18,6 @@ clean:
 	$(V) rm -f hyper
 	$(V) rm -rf hyper.dSYM
 	$(V) rm -f src/compiler/*.pyc
+	$(V) rm -f src/lib/*.hypc
+	$(V) rm -f examples/*.hypc
+	$(V) rm -f docs/*.hypc
