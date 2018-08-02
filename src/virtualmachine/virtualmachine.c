@@ -229,6 +229,9 @@ void exec_sub(struct VM* vm) {
 	} else if (value_typeCheck(value1, value2, FLOAT, INT)) {
 		res = value_make(FLOAT);
 		res->floatValue = value1->floatValue - value2->intValue;
+	} else if (value_typeCheck(value1, value2, FLOAT, FLOAT)) {
+		res = value_make(FLOAT);
+		res->floatValue = value1->floatValue - value2->floatValue;
 	} else {
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '-' operator");
 	}
@@ -250,6 +253,9 @@ void exec_mul(struct VM* vm) {
 	} else if (value_typeCheck(value1, value2, FLOAT, INT)) {
 		res = value_make(FLOAT);
 		res->floatValue = value1->floatValue * value2->intValue;
+	} else if (value_typeCheck(value1, value2, FLOAT, FLOAT)) {
+		res = value_make(FLOAT);
+		res->floatValue = value1->floatValue * value2->floatValue;
 	} else {
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '*' operator");
 	}
@@ -271,6 +277,9 @@ void exec_div(struct VM* vm) {
 	} else if (value_typeCheck(value1, value2, FLOAT, INT)) {
 		res = value_make(FLOAT);
 		res->floatValue = value1->floatValue / value2->intValue;
+	} else if (value_typeCheck(value1, value2, FLOAT, FLOAT)) {
+		res = value_make(FLOAT);
+		res->floatValue = value1->floatValue / value2->floatValue;
 	} else {
 		vmerror_raise(TYPE_ERROR, "Unsupported operand types for '/' operator");
 	}
