@@ -786,12 +786,12 @@ void exec_for_loop(struct VM* vm) {
 
 	if (end->type == ARR) {
 		if (start->intValue >= end->arrLen)
-			vm->pc = jump_addr;
+			vm->pc = jump_addr + vm_pcOffset(vm);
 		else 
 			envstack_assignName(vm->envStack, var, end->arrValue[start->intValue]);
 	} else if (end->type == STRING) {
 		if (start->intValue >= end->stringLen)
-			vm->pc = jump_addr;
+			vm->pc = jump_addr + vm_pcOffset(vm);
 		else {
 			struct Value* chr = value_make(STRING);
 			chr->stringValue = malloc(sizeof(uint8_t) * 2);
@@ -802,7 +802,7 @@ void exec_for_loop(struct VM* vm) {
 		}
 	} else if (end->type == INT) {
 		if (start->intValue >= end->intValue)
-			vm->pc = jump_addr;
+			vm->pc = jump_addr + vm_pcOffset(vm);
 		envstack_assignName(vm->envStack, var, start);
 	}
 	free(var);
@@ -822,7 +822,7 @@ void exec_for_update(struct VM* vm) {
 	struct Value* startnew = value_make(INT);
 	startnew->intValue = start->intValue + 1;
 
-	vm->pc = jump_addr;
+	vm->pc = jump_addr + vm_pcOffset(vm);
 
 	valuestack_push(vm->valueStack, startnew);
 	valuestack_push(vm->valueStack, end);

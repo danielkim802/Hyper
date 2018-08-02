@@ -6,7 +6,9 @@ var len = fun arr {
 
 var map = fun f arr {
 	var res = []
-	for i=0 to len arr { res += [f arr[i]] }
+	for i=0 to len arr {
+		res += [f arr[i]]
+	}
 	return res
 }
 
@@ -18,4 +20,43 @@ var input = fun prompt {
 
 var exit = fun {
 	$ exit
+}
+
+var pow = fun x n {
+	var res = 1
+	for i=0 to n { res *= x }
+	return res
+}
+
+var atoi = fun num {
+	var convert_char = fun c {
+		var map = [
+			['0', 0],
+			['1', 1],
+			['2', 2],
+			['3', 3],
+			['4', 4],
+			['5', 5],
+			['6', 6],
+			['7', 7],
+			['8', 8],
+			['9', 9]
+		]
+		for i in map {
+			if c == i[0] {
+				return i[1]
+			}
+		}
+		return null
+	}
+
+	var res = 0
+	for i=0 to len num {
+		var char = convert_char num[len num - i - 1]
+		if char == null {
+			return res
+		}
+		res += char * pow 10 i
+	}
+	return res
 }

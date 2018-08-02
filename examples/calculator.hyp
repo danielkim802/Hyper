@@ -56,47 +56,12 @@ var _lexer = struct {
 		return false
 	}
 
-	var convert_char = fun c {
-		var map = [
-			['0', 0],
-			['1', 1],
-			['2', 2],
-			['3', 3],
-			['4', 4],
-			['5', 5],
-			['6', 6],
-			['7', 7],
-			['8', 8],
-			['9', 9]
-		]
-		for i in map {
-			if c == i[0] {
-				return i[1]
-			}
-		}
-		return null
-	}
-
-	var pow = fun x n {
-		var res = 1
-		for i=0 to n { res *= x }
-		return res
-	}
-
-	var convert_num = fun num {
-		var res = 0
-		for i=0 to std.len num {
-			res += convert_char num[std.len num - i - 1] * pow 10 i
-		}
-		return res
-	}
-
 	var get_num = fun {
 		var num = ''
 		while char != null and is_num char {
 			num += get null
 		}
-		return convert_num num \ token type.INT
+		return std.atoi num \ token type.INT
 	}
 
 	var get_token = fun {
