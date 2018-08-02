@@ -1,0 +1,13 @@
+var Vec3 = fun x y z {
+	return struct {
+		var x = x
+		var y = y
+		var z = z
+
+		var hash = fun {
+			return x + y + z
+		}
+	}
+}
+
+print (Vec3 1.0 2.0 3.0).hash null
