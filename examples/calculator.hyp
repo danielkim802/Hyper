@@ -1,0 +1,206 @@
+use '../src/lib/std.hyp' as std
+
+var type = struct {
+	var INT = 'INT'
+	var PLUS = 'PLUS'
+	var MINUS = 'MINUS'
+	var MUL = 'MUL'
+	var DIV = 'DIV'
+	var LPAREN = 'LPAREN'
+	var RPAREN = 'RPAREN'
+	var EOF = 'EOF'
+}
+
+var token = fun type value {
+	return struct {
+		var type = type
+		var value = value
+	}
+}
+
+var _lexer = struct {
+	var text
+	var pos
+	var char
+
+	var init = fun txt {
+		text = txt
+		pos = 0
+		if std.len text == 0 { char = null }
+		else { char = text[pos] }
+	}
+
+	var error = fun msg {
+		print msg
+		std.exit null
+	}
+
+	var get = fun {
+		var res = char
+		pos += 1
+
+		if pos >= std.len text {
+			char = null
+		} else {
+			char = text[pos]
+		}
+
+		return res
+	}
+
+	var is_num = fun s {
+		var nums = '0123456789'
+		for i in nums {
+			if s == i { return true }
+		}
+		return false
+	}
+
+	var convert_char = fun c {
+		var map = [
+			['0', 0],
+			['1', 1],
+			['2', 2],
+			['3', 3],
+			['4', 4],
+			['5', 5],
+			['6', 6],
+			['7', 7],
+			['8', 8],
+			['9', 9]
+		]
+		for i in map {
+			if c == i[0] {
+				return i[1]
+			}
+		}
+		return null
+	}
+
+	var pow = fun x n {
+		var res = 1
+		for i=0 to n { res *= x }
+		return res
+	}
+
+	var convert_num = fun num {
+		var res = 0
+		for i=0 to std.len num {
+			res += convert_char num[std.len num - i - 1] * pow 10 i
+		}
+		return res
+	}
+
+	var get_num = fun {
+		var num = ''
+		while char != null and is_num char {
+			num += get null
+		}
+		return convert_num num \ token type.INT
+	}
+
+	var get_token = fun {
+		while char == ' ' { get null }
+		if char == '+' {
+			return get null \ token type.PLUS
+		} elif char == '-' {
+			return get null \ token type.MINUS
+		} elif char == '*' {
+			return get null \ token type.MUL
+		} elif char == '/' {
+			return get null \ token type.DIV
+		} elif char == null {
+			return get null \ token type.EOF
+		} elif char == '(' {
+			return get null \ token type.LPAREN
+		} elif char == ')' {
+			return get null \ token type.RPAREN
+		} elif is_num char {
+			return get_num null
+		} else {
+			'syntax error: ' + char \ error
+		}
+	}
+}
+
+var _parser = struct {
+	var lexer
+	var token
+
+	var init = fun src lex {
+		lexer = lex
+		lexer.init src
+		token = lexer.get_token null
+	}
+
+	var error = fun msg {
+		print msg
+		std.exit null
+	}
+
+	var eat = fun type {
+		if token.type != type {
+			error 'invalid token'
+		}
+
+		token = lexer.get_token null
+	}
+
+	var factor = fun {
+		if token.type == type.INT {
+			var t = token
+			eat type.INT
+			return t.value
+		} elif token.type == type.LPAREN {
+			eat type.LPAREN
+			var res = expr null
+			eat type.RPAREN
+			return res
+		} elif token.type == type.PLUS {
+			eat type.PLUS
+			return +factor null
+		} elif token.type == type.MINUS {
+			eat type.MINUS
+			return -factor null
+		} else {
+			error 'invalid token'
+		}
+	}
+
+	var term = fun {
+		var res = factor null
+		while token.type == type.MUL or token.type == type.DIV {
+			if token.type == type.MUL {
+				eat type.MUL
+				res *= factor null
+			} 
+			if token.type == type.DIV {
+				eat type.DIV
+				res /= factor null
+			}
+		}
+		return res
+	}
+
+	var expr = fun {
+		var res = term null
+		while token.type == type.PLUS or token.type == type.MINUS {
+			if token.type == type.PLUS {
+				eat type.PLUS
+				res += term null
+			} 
+			if token.type == type.MINUS {
+				eat type.MINUS
+				res -= term null
+			}
+		}
+		return res
+	}
+}
+
+var calculator = fun src {
+	_parser.init src _lexer
+	return _parser.expr null
+}
+
+print calculator '1 * 2 * (3 + 4) * -5'

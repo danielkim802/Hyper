@@ -339,6 +339,10 @@ void exec_fun_call(struct VM* vm) {
 	for (uint64_t i = 0; i < fun->funClosureStack->size; i ++)
 		valuestack_push(funcopy->funClosureStack, fun->funClosureStack->values[i]);
 	funcopy->funEnvStack = envstack_make();
+
+	if (fun->funEnvStack->size != 2)
+		vmerror_raise(RUNTIME_ERROR, "Function has incorrect number of environments");
+
 	envstack_pushEnv(funcopy->funEnvStack, &fun->funEnvStack->envs[0]);
 	envstack_pushEnv(funcopy->funEnvStack, &fun->funEnvStack->envs[1]);
 	fun = funcopy;
@@ -351,7 +355,7 @@ void exec_fun_call(struct VM* vm) {
 		vmerror_raise(TYPE_ERROR, "Too many arguments to function call");
 
 	// push argument/function environment
-	envstack_push(fun->funEnvStack, vm->valueStack->size);
+	envstack_push(fun->funEnvStack, vm->valueStack->size - argc);
 
 	// assign closure arguments
 	for (uint64_t i = 0; i < fun->funClosureStack->size; i ++) {

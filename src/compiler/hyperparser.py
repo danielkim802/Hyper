@@ -671,7 +671,7 @@ class Parser(object):
 	def unary_op(self):
 		self.eat_space()
 		res = curr = AST_UnaryOp(None, None)
-		while self.token.type in {ADD, SUB}:
+		while self.token.type in [ADD, SUB]:
 			token = self.token
 			if self.token.type == ADD:
 				self.eat(ADD)
@@ -898,7 +898,7 @@ class Parser(object):
 		token = self.token
 		self.eat(RETURN)
 		self.eat_space()
-		if self.token.type in [INT, FLOAT, NAME, BOOL, STRING, NULL, FUNDEF, STRUCTDEF, LBRACKET, LPAREN]:
+		if self.token.type in [INT, FLOAT, NAME, BOOL, STRING, NULL, FUNDEF, STRUCTDEF, LBRACKET, LPAREN, ADD, SUB]:
 			expr = self.expr()
 			return AST_Return(token, expr)
 		return AST_Return(token, None)
@@ -1029,3 +1029,4 @@ class Parser(object):
 
 	def parse(self):
 		return self.program()
+
